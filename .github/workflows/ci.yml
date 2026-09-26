@@ -1,0 +1,43 @@
+name: SAHAAY CI Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Install Server Dependencies
+        run: npm --prefix server ci
+
+      - name: Install Client Dependencies
+        run: npm --prefix client ci
+
+      - name: Generate Prisma Client
+        run: npm run db:generate
+
+      - name: Build Backend Server
+        run: npm run build:server
+
+      - name: Build Frontend Client
+        run: npm run build:client
+
+      - name: Run Automated Test Suite
+        run: npm test
