@@ -28,6 +28,8 @@ prisma/*.db-wal
 # Storage and uploads (preserve .gitkeep)
 storage/documents/*
 !storage/documents/.gitkeep
+server/storage/documents/*
+!server/storage/documents/.gitkeep
 uploads/*
 !uploads/.gitkeep
 
