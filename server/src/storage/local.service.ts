@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import { IStorageService, StoredFile } from './storage.interface';
+import { IStorageService, StoredFile, MulterFile } from './storage.interface';
 import { logger } from '../utils/logger';
 import { Readable } from 'stream';
 
@@ -16,7 +16,7 @@ export class LocalStorageService implements IStorageService {
     }
   }
 
-  async saveFile(file: Express.Multer.File): Promise<StoredFile> {
+  async saveFile(file: MulterFile): Promise<StoredFile> {
     const filename = path.basename(file.path);
     const fileUrl = `/storage/documents/${filename}`;
     logger.info(`Saved local file: ${file.path} -> ${fileUrl}`);

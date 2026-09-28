@@ -3,7 +3,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import fs from 'fs';
 import path from 'path';
 import { Readable, PassThrough } from 'stream';
-import { IStorageService, StoredFile } from './storage.interface';
+import { IStorageService, StoredFile, MulterFile } from './storage.interface';
 import { config } from '../config/env';
 import { logger } from '../utils/logger';
 
@@ -34,7 +34,7 @@ export class S3StorageService implements IStorageService {
     logger.info(`Initialized S3 Storage Service (Bucket: ${this.bucket}, Region: ${region})`);
   }
 
-  async saveFile(file: Express.Multer.File): Promise<StoredFile> {
+  async saveFile(file: MulterFile): Promise<StoredFile> {
     const filename = path.basename(file.path || file.filename || file.originalname);
     const key = `documents/${Date.now()}-${filename.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
 
