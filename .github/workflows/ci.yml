@@ -11,6 +11,15 @@ jobs:
     name: Lint, Typecheck, Test & Build
     runs-on: ubuntu-latest
 
+    env:
+      # Inline SQLite DB so no external service is needed in CI
+      DATABASE_URL: "file:./prisma/ci-test.db"
+      NODE_ENV: test
+      JWT_SECRET: "sahaay_ci_test_secret_32_chars_ok"
+      JWT_EXPIRES_IN: "1d"
+      STORAGE_PROVIDER: local
+      AI_PROVIDER: mock
+
     steps:
       - name: Checkout Codebase
         uses: actions/checkout@v4
@@ -30,8 +39,14 @@ jobs:
       - name: Install Client Dependencies
         run: npm --prefix client ci
 
-      - name: Generate Prisma Client
+      - name: Generate Prisma Client (dual output)
         run: npm run db:generate
+
+      - name: Create & Migrate Test Database
+        run: npx prisma db push --schema=prisma/schema.prisma --accept-data-loss
+
+      - name: Seed Demo Data into Test Database
+        run: npm run db:seed
 
       - name: Code Quality & Linting Check
         run: npm run lint
@@ -47,3 +62,4 @@ jobs:
 
       - name: Build Frontend Web Client
         run: npm run build:client
+
