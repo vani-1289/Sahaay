@@ -18,7 +18,7 @@ const KNOWN_INSECURE_SECRETS = [
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(5000),
-  DATABASE_URL: z.string().default('file:../prisma/dev.db'),
+  DATABASE_URL: z.string().default(process.env.DATABASE_URL || 'postgresql://localhost:5432/sahaay_db'),
   JWT_SECRET: z.string().default('sahaay_default_dev_jwt_secret_2026'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   CORS_ORIGIN: z.string().default('*'),
@@ -57,7 +57,7 @@ const parseEnv = (): Config => {
     // Return parsed with defaults where possible
     return envSchema.parse({
       ...process.env,
-      DATABASE_URL: process.env.DATABASE_URL || 'file:../prisma/dev.db',
+      DATABASE_URL: process.env.DATABASE_URL || 'postgresql://localhost:5432/sahaay_db',
     });
   }
 
