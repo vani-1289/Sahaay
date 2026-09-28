@@ -10,18 +10,19 @@ if (dbUrl && dbUrl.startsWith('postgres://')) {
   process.env.DATABASE_URL = dbUrl;
 }
 
-// In production on Render, auto-sync tables if DATABASE_URL is set
+// In production on Render, safely apply committed migrations with fail-fast behavior
 if (process.env.NODE_ENV === 'production' && dbUrl) {
   try {
     const schemaPath = path.resolve(__dirname, '../../prisma/schema.prisma');
-    console.log('🔄 Synchronizing PostgreSQL database tables via prisma db push...');
-    execSync(`npx prisma db push --schema="${schemaPath}" --accept-data-loss`, {
+    console.log('🔄 Running prisma migrate deploy in production...');
+    execSync(`npx prisma migrate deploy --schema="${schemaPath}"`, {
       env: { ...process.env, DATABASE_URL: dbUrl },
       stdio: 'inherit',
     });
-    console.log('✅ PostgreSQL database tables synchronized successfully.');
+    console.log('✅ PostgreSQL database migrations deployed successfully.');
   } catch (err) {
-    console.error('⚠️ Notice on prisma db push:', err);
+    console.error('❌ Migration failed, refusing to start:', err);
+    process.exit(1); // Fail-fast instead of running on a broken schema
   }
 }
 
