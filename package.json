@@ -13,8 +13,9 @@
     "build": "npm run db:generate && npm run build:server && npm run build:client",
     "start": "node server/dist/index.js",
     "test": "npm run db:generate && tsx server/src/test/run-tests.ts",
-    "db:generate": "npm --prefix server run prisma:generate",
+    "db:generate": "npx prisma generate --schema=prisma/schema.prisma",
     "db:push": "npx prisma db push",
+
     "db:migrate:dev": "npx prisma migrate dev",
     "db:migrate:deploy": "npx prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",

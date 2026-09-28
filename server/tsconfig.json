@@ -3,6 +3,7 @@
     "target": "ES2022",
     "module": "CommonJS",
     "lib": ["ES2022"],
+    "types": ["node"],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -16,3 +17,4 @@
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
+
