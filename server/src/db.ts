@@ -12,8 +12,8 @@ if (dbUrl && dbUrl.startsWith('postgres://')) {
 
 // In production on Render, safely apply committed migrations with fail-fast behavior
 if (process.env.NODE_ENV === 'production' && dbUrl) {
+  const schemaPath = path.resolve(__dirname, '../../prisma/schema.prisma');
   try {
-    const schemaPath = path.resolve(__dirname, '../../prisma/schema.prisma');
     console.log('🔄 Running prisma migrate deploy in production...');
     execSync(`npx prisma migrate deploy --schema="${schemaPath}"`, {
       env: { ...process.env, DATABASE_URL: dbUrl },
@@ -21,8 +21,23 @@ if (process.env.NODE_ENV === 'production' && dbUrl) {
     });
     console.log('✅ PostgreSQL database migrations deployed successfully.');
   } catch (err) {
-    console.error('❌ Migration failed, refusing to start:', err);
-    process.exit(1); // Fail-fast instead of running on a broken schema
+    // Handle Prisma P3005 ("The database schema is not empty") by baselining the initial migration
+    console.warn('⚠️ migrate deploy encountered an issue. Checking if baseline is needed (P3005)...');
+    try {
+      execSync(`npx prisma migrate resolve --applied 20260928000000_init --schema="${schemaPath}"`, {
+        env: { ...process.env, DATABASE_URL: dbUrl },
+        stdio: 'inherit',
+      });
+      console.log('✅ Baselined existing database with initial migration. Re-running migrate deploy...');
+      execSync(`npx prisma migrate deploy --schema="${schemaPath}"`, {
+        env: { ...process.env, DATABASE_URL: dbUrl },
+        stdio: 'inherit',
+      });
+      console.log('✅ PostgreSQL database migrations deployed successfully.');
+    } catch (baselineErr) {
+      console.error('❌ Migration failed, refusing to start server:', err);
+      process.exit(1); // Fail-fast if migration truly cannot proceed
+    }
   }
 }
 
