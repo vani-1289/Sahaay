@@ -1,13 +1,50 @@
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
+import fs from 'fs';
+import { execSync } from 'child_process';
 
-// Only fall back to the local dev.db if no DATABASE_URL is provided at all.
-// If DATABASE_URL is set (even as a file: URI) we use it as-is so CI and
-// other environments that set it explicitly are respected.
 let dbUrl = process.env.DATABASE_URL;
+const defaultDbPath = path.resolve(__dirname, '../../prisma/dev.db');
+
+// Ensure dbUrl is a valid SQLite file: URI when provider = "sqlite"
 if (!dbUrl) {
-  const absoluteDbPath = path.resolve(__dirname, '../../prisma/dev.db');
-  dbUrl = `file:${absoluteDbPath}`;
+  dbUrl = `file:${defaultDbPath}`;
+} else if (!dbUrl.startsWith('file:')) {
+  if (dbUrl.startsWith('postgres://') || dbUrl.startsWith('postgresql://')) {
+    console.warn(
+      '⚠️ WARNING: DATABASE_URL is set to a PostgreSQL URL, but prisma/schema.prisma is currently configured for SQLite (provider = "sqlite").\n' +
+      'Falling back to SQLite file storage to prevent application crash.\n' +
+      'If you want to use PostgreSQL on Render, set `provider = "postgresql"` in prisma/schema.prisma.'
+    );
+    dbUrl = `file:${defaultDbPath}`;
+  } else {
+    // If it's a file path missing the 'file:' protocol prefix
+    const resolvedPath = path.isAbsolute(dbUrl) ? dbUrl : path.resolve(process.cwd(), dbUrl);
+    dbUrl = `file:${resolvedPath}`;
+  }
+}
+
+// CRITICAL: Synchronize process.env.DATABASE_URL because Prisma internally reads env("DATABASE_URL")
+process.env.DATABASE_URL = dbUrl;
+
+// Auto-push schema if the SQLite db file does not exist yet (e.g. fresh Render container)
+const rawFilePath = dbUrl.replace(/^file:/, '');
+if (!fs.existsSync(rawFilePath)) {
+  try {
+    const prismaDir = path.dirname(rawFilePath);
+    if (!fs.existsSync(prismaDir)) {
+      fs.mkdirSync(prismaDir, { recursive: true });
+    }
+    const schemaPath = path.resolve(__dirname, '../../prisma/schema.prisma');
+    console.log(`🔄 SQLite database file not found at ${rawFilePath}. Initializing tables via prisma db push...`);
+    execSync(`npx prisma db push --schema="${schemaPath}" --accept-data-loss`, {
+      env: { ...process.env, DATABASE_URL: dbUrl },
+      stdio: 'inherit',
+    });
+    console.log('✅ SQLite database schema initialized successfully.');
+  } catch (err) {
+    console.error('⚠️ Could not auto-initialize SQLite database schema:', err);
+  }
 }
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
@@ -24,5 +61,3 @@ export const prisma =
   });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
-
-
