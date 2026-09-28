@@ -45,8 +45,8 @@ FROM node:22-alpine AS runner
 
 WORKDIR /app
 
-# Install runtime OpenSSL required by Prisma engine on Alpine
-RUN apk add --no-cache openssl libc6-compat
+# Install runtime OpenSSL and tini init process for signal handling on Alpine
+RUN apk add --no-cache openssl tini libc6-compat
 
 ENV NODE_ENV=production
 ENV PORT=5000
@@ -69,8 +69,10 @@ USER node
 
 EXPOSE 5000
 
-# Health check
-HEALTHCHECK --interval=20s --timeout=5s --start-period=10s --retries=3 \
+# Health check (checks liveness every 30s)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget -qO- http://localhost:5000/api/health || exit 1
 
-CMD ["node", "server/dist/index.js"]
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node server/dist/index.js"]
+

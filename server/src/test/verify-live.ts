@@ -4,7 +4,7 @@ async function testLiveServer() {
 
   // 1. Health check
   const healthRes = await fetch(`${BASE_URL}/health`);
-  const health = await healthRes.json();
+  const health: any = await healthRes.json();
   console.log('✓ Health Check:', health.status);
 
   // 2. Citizen Login
@@ -13,7 +13,7 @@ async function testLiveServer() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: 'citizen@sahaay.demo', password: 'password123' }),
   });
-  const loginData = await loginRes.json();
+  const loginData: any = await loginRes.json();
   console.log('✓ Citizen Login:', loginData.success ? 'PASS (Token received)' : 'FAIL', loginData.data?.user?.name);
   const citizenToken = loginData.data?.token;
 
@@ -23,7 +23,7 @@ async function testLiveServer() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: 'officer@sahaay.demo', password: 'password123' }),
   });
-  const officerLoginData = await officerLoginRes.json();
+  const officerLoginData: any = await officerLoginRes.json();
   console.log('✓ Officer Login:', officerLoginData.success ? 'PASS (Token received)' : 'FAIL', officerLoginData.data?.user?.designation);
   const officerToken = officerLoginData.data?.token;
 
@@ -41,39 +41,39 @@ async function testLiveServer() {
       district: 'Bhopal',
     }),
   });
-  const registerData = await registerRes.json();
+  const registerData: any = await registerRes.json();
   console.log('✓ Signup Flow:', registerData.success ? 'PASS' : 'FAIL', registerData.data?.user?.email);
 
   // 5. Find My Land / Parcels search
   const parcelsRes = await fetch(`${BASE_URL}/parcels/search?survey=1042`);
-  const parcelsData = await parcelsRes.json();
+  const parcelsData: any = await parcelsRes.json();
   console.log('✓ Find My Land (Survey 1042):', parcelsData.success ? `PASS (${parcelsData.count} parcels found)` : 'FAIL');
 
   const allParcelsRes = await fetch(`${BASE_URL}/parcels/search`);
-  const allParcelsData = await allParcelsRes.json();
+  const allParcelsData: any = await allParcelsRes.json();
   console.log('✓ All Land Parcels Count:', allParcelsData.count, 'parcels found');
 
   // 6. Case details & timeline
   const caseRes = await fetch(`${BASE_URL}/cases/ACQ-2026-MP-1042`);
-  const caseData = await caseRes.json();
+  const caseData: any = await caseRes.json();
   console.log('✓ Case Detail (ACQ-2026-MP-1042):', caseData.success ? 'PASS' : 'FAIL', `Stage: ${caseData.data?.stage}`);
 
   const timelineRes = await fetch(`${BASE_URL}/cases/ACQ-2026-MP-1042/timeline`);
-  const timelineData = await timelineRes.json();
+  const timelineData: any = await timelineRes.json();
   console.log('✓ Acquisition Timeline:', timelineData.success ? `PASS (${timelineData.data?.timeline?.length} stages)` : 'FAIL');
 
   // 7. Citizen Dashboard
   const dashRes = await fetch(`${BASE_URL}/citizen/dashboard`, {
     headers: { Authorization: `Bearer ${citizenToken}` },
   });
-  const dashData = await dashRes.json();
+  const dashData: any = await dashRes.json();
   console.log('✓ Citizen Dashboard:', dashData.success ? 'PASS' : 'FAIL', `Cases: ${dashData.data?.totalCases}`);
 
   // 8. Officer Dashboard
   const officerDashRes = await fetch(`${BASE_URL}/officer/dashboard`, {
     headers: { Authorization: `Bearer ${officerToken}` },
   });
-  const officerDashData = await officerDashRes.json();
+  const officerDashData: any = await officerDashRes.json();
   console.log('✓ Officer Dashboard:', officerDashData.success ? 'PASS' : 'FAIL', `Active Cases: ${officerDashData.data?.stats?.totalCases}`);
 
   console.log('\n=========================================');
@@ -82,3 +82,4 @@ async function testLiveServer() {
 }
 
 testLiveServer().catch(console.error);
+

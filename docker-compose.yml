@@ -1,17 +1,18 @@
 services:
   # ============================================================================
-  # 1. PostgreSQL + PostGIS (Production RDBMS with GIS Support)
+  # 1. PostgreSQL Database Service
   # ============================================================================
   postgres:
-    image: postgis/postgis:16-3.4-alpine
+    image: postgres:16-alpine
     container_name: sahaay_postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-sahaay_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sahaay_password}
       POSTGRES_DB: ${POSTGRES_DB:-sahaay_db}
-    ports:
-      - "5432:5432"
+    # Port is internal to docker network; uncomment if external debugging is required:
+    # ports:
+    #   - "127.0.0.1:5432:5432"
     volumes:
       - sahaay_pgdata:/var/lib/postgresql/data
     networks:
@@ -24,21 +25,21 @@ services:
       start_period: 10s
 
   # ============================================================================
-  # 2. SAHAAY Backend API Service
+  # 2. SAHAAY Unified Production Application Service (Express API + React Client)
   # ============================================================================
-  backend:
+  app:
     build:
       context: .
-      dockerfile: server/Dockerfile
-    container_name: sahaay_backend
+      dockerfile: Dockerfile
+    container_name: sahaay_app
     restart: unless-stopped
     ports:
       - "${PORT:-5000}:5000"
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
+      - NODE_ENV=production
       - PORT=5000
       - DATABASE_URL=postgresql://${POSTGRES_USER:-sahaay_user}:${POSTGRES_PASSWORD:-sahaay_password}@postgres:5432/${POSTGRES_DB:-sahaay_db}?schema=public
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000,http://localhost:5173,http://localhost:80}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
       - JWT_SECRET=${JWT_SECRET:-sahaay_default_dev_jwt_secret_2026}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - AI_PROVIDER=${AI_PROVIDER:-ocr}
@@ -58,28 +59,11 @@ services:
     networks:
       - sahaay_network
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:5000/api/health || exit 1"]
-      interval: 15s
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/api/health"]
+      interval: 20s
       timeout: 5s
       retries: 3
-      start_period: 10s
-
-  # ============================================================================
-  # 3. SAHAAY Frontend Web Client (Nginx)
-  # ============================================================================
-  frontend:
-    build:
-      context: .
-      dockerfile: client/Dockerfile
-    container_name: sahaay_frontend
-    restart: unless-stopped
-    ports:
-      - "3000:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - sahaay_network
+      start_period: 15s
 
 networks:
   sahaay_network:
@@ -90,3 +74,4 @@ volumes:
     driver: local
   sahaay_pgdata:
     driver: local
+

@@ -12,27 +12,40 @@ import { apiLimiter } from './middleware/rateLimiter';
 import { prisma } from './db';
 import { logger } from './utils/logger';
 
+
 export const app = express();
 const storagePath = config.STORAGE_PATH;
 
-// 1. Security & Hardened Headers
+// 1. Trust Reverse Proxy (required for Render / Railway / Fly / AWS ALB rate limiters)
+app.set('trust proxy', 1);
+
+// 2. Security & Hardened Headers
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        imgSrc: ["'self'", 'data:', 'blob:', 'https:', 'http:'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+        imgSrc: [
+          "'self'",
+          'data:',
+          'blob:',
+          'https://*.tile.openstreetmap.org',
+          'https://*.openstreetmap.org',
+          'https://unpkg.com',
+          'https:',
+          'http:',
+        ],
         connectSrc: ["'self'", '*'],
       },
     },
   })
 );
 
-// 2. CORS configuration with multi-origin support
+// 3. CORS configuration with multi-origin support
 const allowedOrigins = config.CORS_ORIGIN === '*'
   ? '*'
   : config.CORS_ORIGIN.split(',').map(o => o.trim());
@@ -46,14 +59,14 @@ app.use(
   })
 );
 
-// 3. Response Compression
+// 4. Response Compression
 app.use(compression());
 
-// 4. Request Body Parsers
+// 5. Request Body Parsers
 app.use(express.json({ limit: `${config.MAX_FILE_SIZE_MB}mb` }));
 app.use(express.urlencoded({ extended: true, limit: `${config.MAX_FILE_SIZE_MB}mb` }));
 
-// 5. Request Logging
+// 6. Request Logging
 if (config.NODE_ENV !== 'test') {
   app.use(morgan('short', {
     stream: {
@@ -62,7 +75,7 @@ if (config.NODE_ENV !== 'test') {
   }));
 }
 
-// 6. Ensure Local Storage Directories Exist (if using local storage provider)
+// 7. Ensure Local Storage Directories Exist (if using local storage provider)
 if (config.STORAGE_PROVIDER === 'local') {
   const uploadDir = path.resolve(storagePath, 'documents');
   if (!fs.existsSync(uploadDir)) {
@@ -72,7 +85,7 @@ if (config.STORAGE_PROVIDER === 'local') {
   app.use('/storage/documents', express.static(uploadDir));
 }
 
-// 7. Health Check Endpoints (Liveness)
+// 8. Health Check Endpoints (Liveness & Readiness)
 const healthHandler = (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
@@ -88,7 +101,7 @@ const healthHandler = (req: Request, res: Response) => {
 app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
 
-// 8. Readiness Check (Validates Database Connection)
+// Deep Readiness Check (Validates Database Connection)
 app.get('/api/health/ready', async (req: Request, res: Response) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -109,7 +122,21 @@ app.get('/api/health/ready', async (req: Request, res: Response) => {
 // 9. API Routes with Global Rate Limiting
 app.use('/api', apiLimiter, apiRouter);
 
-// 10. Global Error Handler
+// 10. Global Error Handler for API
 app.use(errorHandler);
 
+// 11. Static Frontend Hosting for Single-Container Deployments
+const clientDistPath = path.resolve(__dirname, '../../client/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+  app.get('*', (req: Request, res: Response) => {
+    // Avoid intercepting missing API routes
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ success: false, error: 'API route not found' });
+    }
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
+
 export default app;
+
