@@ -17,9 +17,11 @@ export async function uploadAndAnalyzeDocument(req: Request, res: Response, next
       throw new UnauthorizedError('User authentication required');
     }
 
+    // Persist file via storage provider (Local Disk or S3 / Cloudflare R2 / Supabase Storage)
     const storage = getStorageService();
     const stored = await storage.saveFile(file);
 
+    // Run AI / OCR pipeline
     const ai = getAIService();
     const extractedData = await ai.extractDocument(stored.filePath, stored.mimeType, file.originalname);
 

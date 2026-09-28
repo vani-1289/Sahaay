@@ -1,6 +1,7 @@
 import { IAIService } from './ai.interface';
 import { MockAIService } from './mock.service';
 import { OpenAIService } from './openai.service';
+import { OcrAIService } from './ocr.service';
 import { IFaceVerificationService } from './face.interface';
 import { MockFaceVerificationService } from './mockFace.service';
 
@@ -12,6 +13,8 @@ export function getAIService(): IAIService {
     const provider = process.env.AI_PROVIDER?.toLowerCase() || 'mock';
     if (provider === 'openai' && process.env.OPENAI_API_KEY) {
       aiInstance = new OpenAIService(process.env.OPENAI_API_KEY);
+    } else if (provider === 'ocr') {
+      aiInstance = new OcrAIService();
     } else {
       aiInstance = new MockAIService();
     }
@@ -21,7 +24,7 @@ export function getAIService(): IAIService {
 
 export function getFaceVerificationService(): IFaceVerificationService {
   if (!faceVerificationInstance) {
-    // Pluggable biometric verification provider: mock, aws_rekognition, azure_face, google_vision, etc.
+    // Pluggable biometric verification provider
     faceVerificationInstance = new MockFaceVerificationService();
   }
   return faceVerificationInstance;
@@ -29,4 +32,5 @@ export function getFaceVerificationService(): IFaceVerificationService {
 
 export * from './ai.interface';
 export * from './face.interface';
-
+export * from './ocr.service';
+export * from './mock.service';

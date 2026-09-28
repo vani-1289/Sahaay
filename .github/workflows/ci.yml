@@ -1,4 +1,4 @@
-name: SAHAAY CI Pipeline
+name: SAHAAY Production CI/CD Pipeline
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ main, master ]
 
 jobs:
-  build-and-test:
-    name: Build & Test
+  validate-and-test:
+    name: Lint, Typecheck, Test & Build
     runs-on: ubuntu-latest
 
     steps:
@@ -33,11 +33,17 @@ jobs:
       - name: Generate Prisma Client
         run: npm run db:generate
 
-      - name: Build Backend Server
-        run: npm run build:server
+      - name: Code Quality & Linting Check
+        run: npm run lint
 
-      - name: Build Frontend Client
-        run: npm run build:client
+      - name: Static Typecheck Verification
+        run: npm run typecheck
 
       - name: Run Automated Test Suite
         run: npm test
+
+      - name: Build Backend API Server
+        run: npm run build:server
+
+      - name: Build Frontend Web Client
+        run: npm run build:client

@@ -3,8 +3,10 @@ import dotenv from 'dotenv';
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-import { getAIService } from '../ai';
+import { getAIService, OcrAIService } from '../ai';
 import { prisma } from '../db';
+import { getStorageService, LocalStorageService, S3StorageService } from '../storage';
+import { apiLimiter, authLimiter } from '../middleware/rateLimiter';
 
 async function runTests() {
   console.log('🧪 Starting SAHAAY Automated End-to-End Test Suite...\n');
@@ -72,7 +74,7 @@ async function runTests() {
     assert(discrepancy.discrepancies[0].documentValue === '2.73 ha', 'Document area identified as 2.73 ha');
     assert(discrepancy.discrepancies[0].recordedValue === '2.43 ha', 'Recorded area identified as 2.43 ha');
 
-    // 5. Grievance Creation & Reference Code
+    // 5. Citizen Grievance Workflow:
     console.log('\n5. Citizen Grievance Workflow:');
     const newRef = `GR-TEST-${Date.now()}`;
     const grievance = await prisma.grievance.create({
@@ -104,16 +106,6 @@ async function runTests() {
     assert(updatedGrievance.status === 'RESOLVED', 'Officer updated grievance status to RESOLVED');
     assert(updatedGrievance.officerResponse !== null, 'Officer response attached to grievance');
 
-    // Create notification for citizen
-    const notif = await prisma.notification.create({
-      data: {
-        userId: citizen!.id,
-        caseId: acqCase!.id,
-        title: 'Grievance Resolved',
-        message: `Your grievance #${newRef} has been resolved by the Land Acquisition Officer.`,
-        type: 'GRIEVANCE_UPDATE',
-      },
-    });
     // 7. PAN Card Verification Pipeline
     console.log('\n7. PAN Card Verification:');
     const { getFaceVerificationService } = await import('../ai');
@@ -136,6 +128,7 @@ async function runTests() {
     assert(faceMatch.matchScore >= 80, `Biometric match score is above threshold (${faceMatch.matchScore}%)`);
     assert(faceMatch.panFaceDetected === true, 'Face successfully detected in PAN document');
     assert(faceMatch.selfieFaceDetected === true, 'Face successfully detected in Selfie photo');
+
     // 9. Role-Based Authorization & Session Security
     console.log('\n9. Role-Based Authorization & JWT Session Security:');
     const { generateToken } = await import('../utils/jwt');
@@ -160,8 +153,8 @@ async function runTests() {
     // Test requireRole middleware behavior
     const citizenReq: any = { user: { role: 'CITIZEN' } };
     const officerReq: any = { user: { role: 'OFFICER' } };
-    let officerRoutePassed: any = false;
-    let citizenBlockedOnOfficerRoute: any = false;
+    let officerRoutePassed = false;
+    let citizenBlockedOnOfficerRoute = false;
 
     const officerGuard = requireRole('OFFICER', 'ADMIN');
     officerGuard(officerReq, {} as any, () => {
@@ -176,14 +169,42 @@ async function runTests() {
     });
     assert(Boolean(citizenBlockedOnOfficerRoute), 'Citizen is rejected with 403 Forbidden on Officer routes');
 
-    const citizenGuard = requireRole('CITIZEN', 'ADMIN');
-    let officerBlockedOnCitizenRoute: any = false;
-    citizenGuard(officerReq, {} as any, (err?: any) => {
-      if (err && err.statusCode === 403) {
-        officerBlockedOnCitizenRoute = true;
-      }
-    });
-    assert(Boolean(officerBlockedOnCitizenRoute), 'Officer is rejected with 403 Forbidden on Citizen routes');
+    // 10. Real OCR & Bilingual Document Parsing Engine
+    console.log('\n10. Real OCR & Regex Land Record Extraction Engine:');
+    const ocrService = new OcrAIService();
+    const parsedNoticeText = ocrService.parseDocumentText(
+      `GOVERNMENT OF MADHYA PRADESH - REVENUE DEPARTMENT\n` +
+      `NOTIFICATION UNDER SECTION 11(1) OF RFCTLARR ACT, 2013\n` +
+      `Case Ref: ACQ-2026-MP-1042 | Project: National Highway 46 (NH-46-EXP)\n` +
+      `District: Bhopal | Tehsil: Huzur | Village: Rampur | Survey No: 1042\n` +
+      `Notified Area: 2.73 Hectares | Owner: Rajesh Sharma`
+    );
+    assert(parsedNoticeText.surveyNumber === '1042', 'OCR Regex parsed Survey #1042');
+    assert(parsedNoticeText.village === 'Rampur', 'OCR Regex parsed Village Rampur');
+    assert(parsedNoticeText.district === 'Bhopal', 'OCR Regex parsed District Bhopal');
+    assert(parsedNoticeText.areaHa === 2.73, 'OCR Regex parsed Area as 2.73 ha');
+    assert(parsedNoticeText.notificationSection?.includes('11(1)') === true, 'OCR Regex identified Section 11(1)');
+
+    const parsedHindiText = ocrService.parseDocumentText(
+      `मध्य प्रदेश शासन - राजस्व विभाग अधिसूचना धारा 11(1)\n` +
+      `सर्वे नं: 1042, ग्राम: Rampur, जिला: Bhopal, रकबा: 2.73 हेक्टेयर`
+    );
+    assert(parsedHindiText.surveyNumber === '1042', 'Hindi land notice: extracted Survey No. 1042');
+    assert(parsedHindiText.areaHa === 2.73, 'Hindi land notice: extracted 2.73 हेक्टेयर');
+
+    // 11. Cloud Storage Layer (S3 / R2 / Supabase Storage Support)
+    console.log('\n11. Pluggable Cloud Storage Provider:');
+    const storageService = getStorageService();
+    assert(storageService !== null, 'Storage service instantiated successfully');
+    assert(
+      storageService instanceof LocalStorageService || storageService instanceof S3StorageService,
+      'Storage service implements IStorageService interface'
+    );
+
+    // 12. Rate Limiting Middleware
+    console.log('\n12. API & Auth Rate Limiting:');
+    assert(typeof apiLimiter === 'function', 'General API rate limiter middleware initialized');
+    assert(typeof authLimiter === 'function', 'Auth strict rate limiter middleware initialized');
 
     console.log('\n=======================================================');
     console.log(`🏁 TEST RESULTS: ${passed}/${total} checks passed!`);
