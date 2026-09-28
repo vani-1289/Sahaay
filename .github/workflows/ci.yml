@@ -11,9 +11,23 @@ jobs:
     name: Lint, Typecheck, Test & Build
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: sahaay_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
-      # Inline SQLite DB so no external service is needed in CI
-      DATABASE_URL: "file:./prisma/ci-test.db"
+      DATABASE_URL: "postgresql://postgres:postgrespassword@localhost:5432/sahaay_test?schema=public"
       NODE_ENV: test
       JWT_SECRET: "sahaay_ci_test_secret_32_chars_ok"
       JWT_EXPIRES_IN: "1d"
@@ -43,7 +57,7 @@ jobs:
         run: npm run db:generate
 
       - name: Create & Migrate Test Database
-        run: npx prisma db push --schema=prisma/schema.prisma --accept-data-loss
+        run: npx prisma migrate deploy --schema=prisma/schema.prisma
 
       - name: Seed Demo Data into Test Database
         run: npm run db:seed
@@ -62,4 +76,3 @@ jobs:
 
       - name: Build Frontend Web Client
         run: npm run build:client
-
