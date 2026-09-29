@@ -3,6 +3,7 @@ import { register, login, getMe, verifyPan, verifyFace } from '../controllers/au
 import { authenticate } from '../middleware/auth';
 import { uploadMiddleware } from '../middleware/upload';
 import { authLimiter, uploadLimiter } from '../middleware/rateLimiter';
+import { autoSeedDatabase } from '../services/seedService';
 
 const router = Router();
 
@@ -19,5 +20,15 @@ router.post(
   ]),
   verifyFace
 );
+
+router.post('/seed-demo', async (req, res) => {
+  const result = await autoSeedDatabase();
+  res.json({ success: result.seeded, message: result.message });
+});
+
+router.get('/seed-demo', async (req, res) => {
+  const result = await autoSeedDatabase();
+  res.json({ success: result.seeded, message: result.message });
+});
 
 export default router;

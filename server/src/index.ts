@@ -2,6 +2,7 @@ import app from './app';
 import { config } from './config/env';
 import { prisma } from './db';
 import { logger } from './utils/logger';
+import { autoSeedDatabase } from './services/seedService';
 
 const PORT = config.PORT;
 const storagePath = config.STORAGE_PATH;
@@ -16,6 +17,11 @@ if (config.NODE_ENV !== 'test') {
     logger.info(` Storage path: ${storagePath}`);
     logger.info(` Health check: http://localhost:${PORT}/api/health`);
     logger.info(`=======================================================`);
+
+    // Verify and seed essential demo accounts for evaluator testing
+    autoSeedDatabase().catch((err) => {
+      logger.error('Auto-seed error on startup:', { err });
+    });
   });
 
   const gracefulShutdown = async (signal: string) => {

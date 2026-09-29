@@ -34,10 +34,10 @@ const envSchema = z.object({
   AWS_BUCKET_NAME: z.string().optional(),
   S3_ENDPOINT: z.string().optional(),
   S3_PUBLIC_URL_PREFIX: z.string().optional(),
-  // Rate Limiting
+  // Rate Limiting (Hardened for evaluation & hackathon live testing)
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000), // 15 mins
-  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
-  AUTH_RATE_LIMIT_MAX: z.coerce.number().default(15),
+  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(1000),
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().default(200),
 });
 
 export type Config = z.infer<typeof envSchema>;

@@ -32,6 +32,7 @@ export const LoginPage: React.FC = () => {
   const [district, setDistrict] = useState('Bhopal');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [wakeUpNotice, setWakeUpNotice] = useState(false);
 
   // Multi-step Registration State (Steps 1 to 6)
   const [regStep, setRegStep] = useState<number>(1);
@@ -43,13 +44,23 @@ export const LoginPage: React.FC = () => {
   const { setAuth, language } = useAuthStore();
   const navigate = useNavigate();
 
+  // Proactively ping health check on mount to wake up Render server
+  useEffect(() => {
+    api.health().catch(() => {});
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    setWakeUpNotice(false);
+
+    const wakeUpTimer = setTimeout(() => {
+      setWakeUpNotice(true);
+    }, 2500);
 
     try {
-      const res = await api.login({ email, password });
+      const res = await api.login({ email: email.trim(), password });
       if (res.success) {
         setAuth(res.data.token, res.data.user);
         if (res.data.user.role === 'OFFICER') {
@@ -61,6 +72,8 @@ export const LoginPage: React.FC = () => {
     } catch (err: any) {
       setError(err.message || t('authFailedError', language));
     } finally {
+      clearTimeout(wakeUpTimer);
+      setWakeUpNotice(false);
       setLoading(false);
     }
   };
@@ -107,7 +120,7 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const populateDemoUser = (userKey: 'GEETA' | 'RAJESH' | 'ANITA' | 'OFFICER' | 'ADMIN') => {
+  const populateDemoUser = (userKey: 'GEETA' | 'RAJESH' | 'ANITA' | 'OFFICER' | 'ADMIN' | 'PRAJYA') => {
     setIsRegister(false);
     setRegStep(1);
     if (userKey === 'GEETA') {
@@ -122,6 +135,9 @@ export const LoginPage: React.FC = () => {
     } else if (userKey === 'OFFICER') {
       setEmail('officer@sahaay.demo');
       setPassword('password123');
+    } else if (userKey === 'PRAJYA') {
+      setEmail('prajya@gmail.com');
+      setPassword('12345678');
     } else {
       setEmail('admin@sahaay.demo');
       setPassword('password123');
@@ -242,6 +258,22 @@ export const LoginPage: React.FC = () => {
                 <div className="text-xs font-bold text-[#0284C7] group-hover:text-white">👮‍♂️ Vikram Chouhan (CALAO)</div>
                 <div className="text-[10px] opacity-80 truncate">Officer Mode (All 13 Bhopal Parcels)</div>
               </button>
+
+              <button
+                type="button"
+                onClick={() => populateDemoUser('PRAJYA')}
+                className={`p-2 rounded-lg border text-left transition cursor-pointer min-h-[44px] sm:col-span-2 ${
+                  email === 'prajya@gmail.com' && !isRegister
+                    ? 'bg-[#123B5D] text-white border-[#123B5D] shadow-soft'
+                    : 'bg-white border-[#DDE6EC] text-[#243746] hover:bg-slate-50'
+                }`}
+              >
+                <div className="text-xs font-bold flex items-center justify-between">
+                  <span>👩‍💼 Kumari Prajya</span>
+                  <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded">Registered Account</span>
+                </div>
+                <div className="text-[10px] opacity-80 truncate">prajya@gmail.com (Passcode: 12345678 / password123)</div>
+              </button>
             </div>
           </div>
 
@@ -277,9 +309,25 @@ export const LoginPage: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-4">
+              {wakeUpNotice && (
+                <div className="bg-amber-50 border border-amber-300 text-amber-900 rounded-lg p-3 text-xs flex items-start gap-2.5 animate-pulse">
+                  <span className="text-base leading-none">⏳</span>
+                  <div className="space-y-0.5">
+                    <p className="font-bold">Connecting to Cloud Backend Server...</p>
+                    <p className="text-[11px] text-amber-800 opacity-90">
+                      The server is waking up (Render free tier takes ~30-40 seconds on cold start). Please keep this tab open, your login request is being processed.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {error && (
-                <div className="bg-[#FBECEC] border border-[#C62828]/30 rounded-lg p-3 text-xs text-[#C62828] font-medium">
-                  {error}
+                <div className="bg-[#FBECEC] border border-[#C62828]/30 rounded-lg p-3 text-xs text-[#C62828] font-medium space-y-1">
+                  <div className="font-bold flex items-center gap-1.5">
+                    <span>⚠️</span>
+                    <span>Sign-in Notice</span>
+                  </div>
+                  <p>{error}</p>
                 </div>
               )}
 
@@ -291,7 +339,7 @@ export const LoginPage: React.FC = () => {
                       {t('emailLabel', language)}
                     </label>
                     <input
-                      type="email"
+                      type="text"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -320,7 +368,13 @@ export const LoginPage: React.FC = () => {
                     className="w-full min-h-[46px] bg-[#123B5D] hover:bg-[#1B4D78] active:bg-[#0C2840] text-white font-semibold text-xs sm:text-sm rounded-lg shadow-soft transition flex items-center justify-center space-x-2 disabled:opacity-70 mt-2 cursor-pointer"
                   >
                     {loading ? (
-                      <span>{t('verifyingBtn', language)}</span>
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        <span>{wakeUpNotice ? 'Waking up server & verifying...' : t('verifyingBtn', language)}</span>
+                      </span>
                     ) : (
                       <>
                         <span>{t('signInBtn', language)}</span>

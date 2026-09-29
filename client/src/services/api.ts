@@ -1,6 +1,8 @@
 import { fetchWithAuth } from './apiClient.js';
 
 export const authApi = {
+  health: () => fetchWithAuth('/health'),
+
   login: (credentials: { email: string; password: string }) =>
     fetchWithAuth('/auth/login', {
       method: 'POST',

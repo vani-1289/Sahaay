@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore.js';
 import { LANGUAGES } from './lib/i18n.js';
 import { Layout } from './components/layout/Layout.js';
+import { api } from './services/api.js';
 
 // Pages
 import { LoginPage } from './pages/LoginPage.js';
@@ -56,6 +57,11 @@ const OfficerRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 export const App: React.FC = () => {
   const { language, token, user } = useAuthStore();
+
+  // Proactively ping backend to wake up cloud server on initial page visit
+  useEffect(() => {
+    api.health().catch(() => {});
+  }, []);
 
   // Sync RTL and lang attribute with html root
   useEffect(() => {
