@@ -1031,36 +1031,27 @@ loadStoreSnapshot();
 // Always save updated Bhopal parcels to snapshot file immediately
 saveStoreSnapshot();
 
-// Fast local PostgreSQL reachability check to prevent 4-5s Prisma timeouts
-let isPostgresAvailable = false;
-
-function checkPostgresPort(): void {
+// Fast synchronous PostgreSQL reachability check to eliminate async race condition between in-memory and PostgreSQL modes
+function checkPostgresPortSync(): boolean {
   try {
     const rawUrl = process.env.DATABASE_URL;
-    if (!rawUrl || rawUrl.includes('localhost') || rawUrl.includes('127.0.0.1')) {
-      const socket = new net.Socket();
-      socket.setTimeout(250);
-      socket.on('connect', () => {
-        isPostgresAvailable = true;
-        socket.destroy();
-      });
-      socket.on('error', () => {
-        isPostgresAvailable = false;
-        socket.destroy();
-      });
-      socket.on('timeout', () => {
-        isPostgresAvailable = false;
-        socket.destroy();
-      });
-      socket.connect(5432, '127.0.0.1');
-    } else {
-      isPostgresAvailable = true;
+    if (!rawUrl) return false;
+    if (!rawUrl.includes('localhost') && !rawUrl.includes('127.0.0.1')) {
+      return true;
     }
+    const portMatch = rawUrl.match(/:(\d+)\//);
+    const port = portMatch ? parseInt(portMatch[1], 10) : 5432;
+    execSync(
+      `node -e "const s = require('net').connect(${port}, '127.0.0.1', () => process.exit(0)).on('error', () => process.exit(1)); setTimeout(() => process.exit(1), 300);"`,
+      { stdio: 'ignore', timeout: 600 }
+    );
+    return true;
   } catch {
-    isPostgresAvailable = false;
+    return false;
   }
 }
-checkPostgresPort();
+
+let isPostgresAvailable = checkPostgresPortSync();
 
 function isConnectionError(err: any): boolean {
   if (!err) return false;
