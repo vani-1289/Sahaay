@@ -8,6 +8,12 @@ import {
   ArrowRight,
   Sparkles,
   AlertTriangle,
+  FileText,
+  ShieldAlert,
+  ShieldCheck,
+  Lock,
+  Globe,
+  FileQuestion,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore.js';
 import { t } from '../lib/i18n.js';
@@ -15,7 +21,10 @@ import { t } from '../lib/i18n.js';
 export const FindMyLandPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { language } = useAuthStore();
+  const { language, user } = useAuthStore();
+
+  const isOfficer = user && (user.role === 'OFFICER' || user.role === 'ADMIN');
+  const isCitizen = user && user.role === 'CITIZEN';
 
   const [activeTab, setActiveTab] = useState<'survey' | 'qr' | 'gps'>('survey');
   const [searchQuery] = useState(searchParams.get('q') || '');
@@ -23,19 +32,49 @@ export const FindMyLandPage: React.FC = () => {
   const [village, setVillage] = useState(searchParams.get('village') || '');
   const [district, setDistrict] = useState(searchParams.get('district') || '');
   const [results, setResults] = useState<any[]>([]);
+  const [myParcels, setMyParcels] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [restrictedNotice, setRestrictedNotice] = useState<string | null>(null);
 
+  // Fetch initial parcels strictly for active user
   useEffect(() => {
-    const initialSurvey = searchParams.get('survey') || '1042';
-    setSurveyNumber(initialSurvey);
-    handleSearch(initialSurvey);
-  }, []);
+    const initFetch = async () => {
+      setLoading(true);
+      try {
+        const res = await api.searchParcels({});
+        if (res.success && res.data) {
+          setMyParcels(res.data);
+          const requestedSurvey = searchParams.get('survey') || searchParams.get('q');
+          
+          if (requestedSurvey) {
+            setSurveyNumber(requestedSurvey);
+            handleSearch(requestedSurvey, res.data);
+          } else if (res.data.length > 0) {
+            // Only auto-search if user has registered parcels in database
+            const firstSurvey = res.data[0].surveyNumber;
+            setSurveyNumber(firstSurvey);
+            handleSearch(firstSurvey, res.data);
+          } else {
+            // New user with no land parcel in database: leave clean empty state
+            setSurveyNumber('');
+            setResults([]);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    initFetch();
+  }, [user?.id]);
 
-  const handleSearch = async (overrideSurvey?: string) => {
+  const handleSearch = async (overrideSurvey?: string, existingList?: any[]) => {
     const surveyToUse = overrideSurvey !== undefined ? overrideSurvey : surveyNumber;
     setLoading(true);
     setHasSearched(true);
+    setRestrictedNotice(null);
 
     try {
       const res = await api.searchParcels({
@@ -46,9 +85,18 @@ export const FindMyLandPage: React.FC = () => {
       });
 
       if (res.success) {
+        if (res.data.length === 0 && isCitizen) {
+          const list = existingList || myParcels;
+          if (list.length > 0) {
+            const authorizedSurvey = list.map((p: any) => p.surveyNumber).join(', ');
+            setRestrictedNotice(
+              `Access Restricted: Survey #${surveyToUse || 'entered'} is not registered under your account (${user?.name}). You are only authorized to access your own land record (${authorizedSurvey}).`
+            );
+          }
+        }
         setResults(res.data);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setResults([]);
     } finally {
@@ -64,7 +112,7 @@ export const FindMyLandPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white p-6 rounded-xl border border-[#DDE6EC] shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white p-6 rounded-2xl border border-[#DDE6EC] shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#123B5D] text-[#E8B84A] flex items-center justify-center font-bold text-xs shadow-soft">
@@ -81,15 +129,44 @@ export const FindMyLandPage: React.FC = () => {
 
         <button
           onClick={() => navigate('/documents/analyze')}
-          className="px-4 py-2.5 bg-[#FFF9F0] hover:bg-[#FFF3E0] text-[#123B5D] border border-[#E8B84A] text-xs font-semibold rounded-lg flex items-center space-x-1.5 transition self-start sm:self-auto cursor-pointer"
+          className="px-4 py-2.5 bg-[#FFF9F0] hover:bg-[#FFF3E0] text-[#123B5D] border border-[#E8B84A] text-xs font-semibold rounded-lg flex items-center space-x-1.5 transition self-start sm:self-auto cursor-pointer shadow-soft"
         >
           <Sparkles className="w-4 h-4 text-[#C7972D]" />
           <span>{t('understandDocument', language)}</span>
         </button>
       </div>
 
+      {/* Role Protection Banner */}
+      {isCitizen && myParcels.length > 0 && (
+        <div className="p-3 bg-[#F5FAFC] border border-[#DDE6EC] rounded-xl text-xs text-[#243746] flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-soft">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-[#2E7D5B] flex-shrink-0" />
+            <div>
+              <span className="font-bold text-[#123B5D]">भूमि स्वामी सुरक्षित अभिगम (Owner Secured Access): </span>
+              <span className="text-[#667784]">
+                खातेदार: <strong>{user?.name}</strong> • आप केवल अपनी पंजीकृत भूमि का विवरण एवं प्रतिकर स्थिति देख सकते हैं।
+              </span>
+            </div>
+          </div>
+          <span className="text-[11px] font-mono font-bold bg-white border border-[#DDE6EC] px-2.5 py-1 rounded text-[#123B5D] self-start sm:self-auto whitespace-nowrap shadow-soft">
+            {myParcels.length} Registered Land(s)
+          </span>
+        </div>
+      )}
+
+      {/* Access Restriction Notice if citizen searched other land */}
+      {restrictedNotice && (
+        <div className="p-4 bg-[#FEF2F2] border border-[#FECACA] rounded-xl text-xs text-[#991B1B] flex items-start gap-2.5 shadow-soft">
+          <Lock className="w-5 h-5 text-[#DC2626] flex-shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <div className="font-extrabold text-[#B91C1C]">गोपनीयता एवं सुरक्षा प्रतिबंध (Access Restricted)</div>
+            <div>{restrictedNotice}</div>
+          </div>
+        </div>
+      )}
+
       {/* Search Form Card */}
-      <div className="soft-card p-4 sm:p-6 space-y-4">
+      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-[#DDE6EC] shadow-soft space-y-4">
         {/* Search Mode Tabs */}
         <div className="flex flex-wrap border-b border-[#DDE6EC] gap-1.5 sm:gap-2 pb-2">
           <button
@@ -100,7 +177,7 @@ export const FindMyLandPage: React.FC = () => {
                 : 'text-[#667784] hover:text-[#123B5D]'
             }`}
           >
-            {t('surveyNo', language)}
+            {t('surveyNo', language)} / Khasra
           </button>
           <button
             onClick={() => setActiveTab('qr')}
@@ -129,7 +206,7 @@ export const FindMyLandPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-[#123B5D] mb-1">
-                  {t('surveyNo', language)} *
+                  {t('surveyNo', language)} / खसरा नं. *
                 </label>
                 <input
                   type="text"
@@ -143,65 +220,51 @@ export const FindMyLandPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-[#123B5D] mb-1">
-                  {t('village', language)}
+                  {t('village', language)} / स्थान
                 </label>
                 <input
                   type="text"
                   value={village}
                   onChange={(e) => setVillage(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder={t('village', language)}
+                  placeholder="e.g. Chandanpura, Kolar, Misrod..."
                   className="w-full px-3.5 py-2.5 rounded-lg border border-[#DDE6EC] text-xs font-medium focus:outline-none focus:border-[#123B5D] bg-[#F8FAFC] text-[#243746]"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-[#123B5D] mb-1">
-                  {t('district', language)}
+                  {t('district', language)} / ज़िला
                 </label>
                 <input
                   type="text"
                   value={district}
                   onChange={(e) => setDistrict(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder={t('district', language)}
+                  placeholder="Bhopal"
                   className="w-full px-3.5 py-2.5 rounded-lg border border-[#DDE6EC] text-xs font-medium focus:outline-none focus:border-[#123B5D] bg-[#F8FAFC] text-[#243746]"
                 />
               </div>
             </div>
 
-            {/* Test Chips */}
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-[#667784] pt-1">
-              <span className="font-semibold">{t('quickTipTitle', language)}:</span>
-              <button
-                type="button"
-                onClick={() => handleChipClick('1042')}
-                className="px-2.5 py-1.5 bg-[#EAF3F8] hover:bg-[#DDE6EC] rounded-md font-mono font-bold text-[#123B5D] cursor-pointer"
-              >
-                #1042 (Rampur)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleChipClick('1043')}
-                className="px-2.5 py-1.5 bg-[#EAF3F8] hover:bg-[#DDE6EC] rounded-md font-mono font-bold text-[#123B5D] cursor-pointer"
-              >
-                #1043 (Rampur)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleChipClick('88/1')}
-                className="px-2.5 py-1.5 bg-[#EAF3F8] hover:bg-[#DDE6EC] rounded-md font-mono font-bold text-[#123B5D] cursor-pointer"
-              >
-                #88/1 (Kolar Kalan)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleChipClick('142')}
-                className="px-2.5 py-1.5 bg-[#EAF3F8] hover:bg-[#DDE6EC] rounded-md font-mono font-bold text-[#123B5D] cursor-pointer"
-              >
-                #142 (Bagsevaniya)
-              </button>
-            </div>
+            {/* Chips for Accessible Parcels */}
+            {myParcels.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-[#667784] pt-1">
+                <span className="font-semibold text-[#123B5D]">
+                  {isOfficer ? 'All Bhopal Places:' : 'My Registered Land:'}
+                </span>
+                {myParcels.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handleChipClick(p.surveyNumber)}
+                    className="px-2.5 py-1.5 bg-[#F8FAFC] hover:bg-[#EAF3F8] border border-[#DDE6EC] rounded-md font-mono font-bold text-[#123B5D] cursor-pointer transition"
+                  >
+                    #{p.surveyNumber} ({p.village.split(' ')[0]})
+                  </button>
+                ))}
+              </div>
+            )}
 
             <button
               onClick={() => handleSearch()}
@@ -221,13 +284,12 @@ export const FindMyLandPage: React.FC = () => {
             </label>
             <input
               type="text"
-              placeholder="e.g. ACQ-2026-MP-1042"
-              defaultValue="ACQ-2026-MP-1042"
+              placeholder="e.g. ACQ-2026-MP-5583"
               className="w-full px-3.5 py-2.5 rounded-lg border border-[#DDE6EC] text-xs font-mono font-bold bg-[#F8FAFC]"
             />
             <button
-              onClick={() => navigate('/cases/ACQ-2026-MP-1042')}
-              className="px-5 py-2.5 bg-[#123B5D] text-white text-xs font-semibold rounded-lg cursor-pointer"
+              onClick={() => navigate('/cases')}
+              className="px-5 py-2.5 bg-[#123B5D] text-white text-xs font-semibold rounded-lg cursor-pointer shadow-soft"
             >
               {t('viewCase', language)}
             </button>
@@ -237,11 +299,11 @@ export const FindMyLandPage: React.FC = () => {
         {activeTab === 'gps' && (
           <div className="space-y-3 max-w-md text-xs text-[#667784]">
             <p>
-              GPS centroid: <strong>23.2625° N, 77.4150° E</strong> ({t('parcelVillagePrompt', language)}).
+              Bhopal Cadastral GPS Coverage: <strong>23.2450° N, 77.4100° E</strong>.
             </p>
             <button
               onClick={() => navigate('/map')}
-              className="px-5 py-2.5 bg-[#123B5D] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-2.5 bg-[#123B5D] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer shadow-soft"
             >
               <Map className="w-4 h-4 text-[#E8B84A]" />
               <span>{t('viewOnGis', language)}</span>
@@ -259,100 +321,141 @@ export const FindMyLandPage: React.FC = () => {
         </div>
 
         {results.length > 0 ? (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-5">
             {results.map((parcel) => {
               const matchedCase = parcel.cases?.[0];
+              const ownerName = matchedCase?.citizen?.name || (isCitizen ? user?.name : '—');
+              const displayAreaAcres =
+                parcel.recordedAreaAcres ||
+                (parcel.recordedAreaHa ? (parcel.recordedAreaHa * 2.47105).toFixed(2) : '—');
+              const displayAreaHa = parcel.recordedAreaHa || '—';
+              const projectName = matchedCase?.project?.name || 'Highway / Infrastructure Acquisition';
+              const compValue = matchedCase?.estimatedCompensationINR
+                ? `₹${Number(matchedCase.estimatedCompensationINR).toLocaleString('en-IN')}`
+                : '—';
+              const parcelCode = parcel.parcelCode || (parcel.surveyNumber ? `MP-BH-${parcel.surveyNumber.replace('/', '')}` : '—');
 
               return (
                 <div
                   key={parcel.id}
-                  className="soft-card p-5 sm:p-6 space-y-4"
+                  className="bg-white rounded-2xl border border-[#DDE6EC] shadow-soft p-5 sm:p-6 space-y-4 hover:border-[#123B5D] transition"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#DDE6EC] pb-4">
+                  {/* Card Header matching reference layout */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#F1F5F9] pb-4">
                     <div className="flex items-center space-x-3.5">
-                      <div className="w-11 h-11 rounded-xl bg-[#123B5D] text-[#E8B84A] font-mono font-bold flex items-center justify-center text-xs shadow-soft">
+                      <div className="w-12 h-12 rounded-xl bg-[#123B5D] text-[#E8B84A] font-mono font-extrabold flex items-center justify-center text-xs shadow-soft">
                         #{parcel.surveyNumber}
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
-                          <h3 className="text-base font-bold text-[#123B5D]">
-                            {t('surveyNo', language)} #{parcel.surveyNumber} {parcel.khasraNumber && `(${parcel.khasraNumber})`}
+                          <span className="font-mono font-bold text-xs text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded">
+                            {parcelCode}
+                          </span>
+                          <h3 className="text-base font-extrabold text-[#123B5D]">
+                            {t('surveyNo', language)} #{parcel.surveyNumber}
                           </h3>
                           <StatusBadge status={parcel.currentStatus} />
                         </div>
-                        <p className="text-xs text-[#667784] mt-0.5">
-                          {t('village', language)}: <strong>{parcel.village}</strong> • {t('tehsil', language)}: <strong>{parcel.tehsil}</strong> • {t('district', language)}: <strong>{parcel.district}</strong>
+                        <p className="text-xs text-[#667784] mt-1">
+                          स्थान (Village): <strong className="text-[#243746]">{parcel.village}</strong> • tehsil: <strong>{parcel.tehsil}</strong> • district: <strong>{parcel.district}</strong>
                         </p>
                       </div>
                     </div>
 
-                    <div className="text-left sm:text-right text-xs">
-                      <span className="text-[#667784] block">{t('recordedArea', language)}</span>
-                      <span className="text-lg font-extrabold text-[#2E7D5B] font-mono">{parcel.recordedAreaHa} ha</span>
-                      <span className="text-[11px] text-[#667784] block">({parcel.landType})</span>
+                    <div className="text-left sm:text-right">
+                      <span className="text-[11px] text-[#667784] block">क्षेत्रफल (Area)</span>
+                      <span className="text-lg font-black text-[#2E7D5B] font-mono">
+                        {displayAreaAcres} acres
+                      </span>
+                      <span className="text-xs text-[#667784] block">({displayAreaHa} ha)</span>
                     </div>
                   </div>
 
-                  {matchedCase ? (
-                    <div className="bg-[#F5FAFC] border border-[#DDE6EC] rounded-xl p-4 text-xs space-y-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <span className="text-[10px] font-bold text-[#667784] uppercase block">
-                            {t('associatedProject', language)}
-                          </span>
-                          <span className="font-bold text-[#123B5D] text-sm">
-                            {matchedCase.project?.name || 'Highway Expansion Project'}
-                          </span>
-                        </div>
-                        <span className="font-mono font-bold text-[#123B5D] bg-white px-2.5 py-1 rounded-md border border-[#DDE6EC]">
-                          {matchedCase.caseReference}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#DDE6EC]">
-                        <span className="text-[#667784]">
-                          {t('currentStage', language)}: <strong>{matchedCase.stage}</strong>
-                        </span>
-                        {matchedCase.estimatedCompensationINR > 0 && (
-                          <span className="text-[#667784]">
-                            {t('totalCompensation', language)}: <strong className="text-[#2E7D5B]">₹{(matchedCase.estimatedCompensationINR).toLocaleString('en-IN')}</strong>
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="pt-1 flex flex-wrap gap-2.5">
-                        <button
-                          onClick={() => navigate(`/cases/${matchedCase.id}`)}
-                          className="px-4 py-2 bg-[#123B5D] hover:bg-[#1B4D78] text-white font-semibold text-xs rounded-lg flex items-center space-x-1.5 cursor-pointer shadow-soft"
-                        >
-                          <span>{t('viewCase', language)}</span>
-                          <ArrowRight className="w-3.5 h-3.5 text-[#E8B84A]" />
-                        </button>
-                        <button
-                          onClick={() => navigate('/map')}
-                          className="px-4 py-2 bg-white border border-[#DDE6EC] hover:bg-[#F8FAFC] text-[#123B5D] font-semibold text-xs rounded-lg flex items-center space-x-1.5 cursor-pointer shadow-soft"
-                        >
-                          <Map className="w-3.5 h-3.5 text-[#123B5D]" />
-                          <span>{t('viewOnGis', language)}</span>
-                        </button>
-                      </div>
+                  {/* 8 Cadastral Detail Fields strictly from parcel */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-[#F8FAFC] p-4 rounded-xl border border-[#DDE6EC] text-xs">
+                    <div className="space-y-0.5">
+                      <span className="text-[11px] text-[#667784] font-medium block">खातेदार (Owner)</span>
+                      <span className="font-bold text-[#123B5D]">{ownerName}</span>
                     </div>
-                  ) : (
-                    <p className="text-xs text-[#667784] bg-[#F8FAFC] p-3 rounded-lg border border-[#DDE6EC]">
-                      {t('noParcelsFoundDesc', language)}
-                    </p>
-                  )}
+
+                    <div className="space-y-0.5">
+                      <span className="text-[11px] text-[#667784] font-medium block">भूमि प्रकार (Type)</span>
+                      <span className="font-bold text-[#243746]">{parcel.landType}</span>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <span className="text-[11px] text-[#667784] font-medium block">खसरा नं. (Survey)</span>
+                      <span className="font-mono font-bold text-[#123B5D]">{parcel.surveyNumber}</span>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <span className="text-[11px] text-[#667784] font-medium block">दस्तावेज़ (Docs)</span>
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
+                        Under Review
+                      </span>
+                    </div>
+
+                    <div className="sm:col-span-2 space-y-0.5">
+                      <span className="text-[11px] text-[#667784] font-medium block">परियोजना (Project)</span>
+                      <span className="font-bold text-[#243746]">{projectName}</span>
+                    </div>
+
+                    <div className="sm:col-span-2 space-y-0.5">
+                      <span className="text-[11px] text-[#667784] font-medium block">प्रतिकर (Compensation)</span>
+                      <span className="font-black text-[#D97706] font-mono text-sm">{compValue}</span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <div className="flex flex-wrap gap-2.5">
+                      <button
+                        onClick={() => {
+                          if (matchedCase?.id) {
+                            navigate(`/cases/${matchedCase.id}`);
+                          } else {
+                            navigate(`/cases?survey=${parcel.surveyNumber}`);
+                          }
+                        }}
+                        className="px-4 py-2.5 bg-[#123B5D] hover:bg-[#1B4D78] text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 cursor-pointer shadow-soft transition"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-[#E8B84A]" />
+                        <span>राजस्व अभिलेख खोलें / Open Dossier</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        onClick={() => navigate(`/map?survey=${parcel.surveyNumber}`)}
+                        className="px-4 py-2.5 bg-white border border-[#DDE6EC] hover:bg-[#F8FAFC] text-[#123B5D] font-bold text-xs rounded-xl flex items-center space-x-1.5 cursor-pointer shadow-soft transition"
+                      >
+                        <Map className="w-3.5 h-3.5 text-[#0284C7]" />
+                        <span>भू-स्थानिक नक्शा देखें / View on GIS</span>
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => navigate(`/grievance/new?survey=${parcel.surveyNumber}`)}
+                      className="px-3.5 py-2 text-xs font-semibold text-[#DC2626] hover:bg-[#FEF2F2] rounded-lg flex items-center gap-1 transition cursor-pointer"
+                    >
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                      <span>{t('serviceGrievanceTitle', language)}</span>
+                    </button>
+                  </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          hasSearched && !loading && (
-            <div className="bg-white border border-[#DDE6EC] rounded-xl p-8 text-center space-y-3">
-              <AlertTriangle className="w-8 h-8 text-[#C7972D] mx-auto" />
-              <h3 className="text-sm font-bold text-[#123B5D]">{t('noParcelsFoundTitle', language)}</h3>
-              <p className="text-xs text-[#667784] max-w-sm mx-auto">
-                {t('noParcelsFoundDesc', language)}
+          !loading && (
+            <div className="bg-white border border-[#DDE6EC] rounded-2xl p-8 text-center space-y-3 shadow-soft">
+              <FileQuestion className="w-10 h-10 text-[#C7972D] mx-auto bg-[#FFF9F0] p-2 rounded-xl border border-[#E8B84A]/30" />
+              <h3 className="text-sm font-bold text-[#123B5D]">
+                {hasSearched ? 'कोई भूमि अभिलेख नहीं मिला' : 'वर्तमान में कोई भूमि अभिलेख उपलब्ध नहीं'}
+              </h3>
+              <p className="text-xs text-[#667784] max-w-md mx-auto leading-relaxed">
+                {hasSearched
+                  ? `दर्ज की गई खोज के लिए कोई भू-खंड उपलब्ध नहीं है। कृपया सही खसरा संख्या या ग्राम नाम दर्ज करें।`
+                  : `इस खाते (${user?.email || 'User'}) के अंतर्गत कोई भूमि अभिलेख दर्ज नहीं है। भूमि की स्थिति जांचने के लिए ऊपर खसरा संख्या खोजें।`}
               </p>
             </div>
           )
@@ -361,4 +464,3 @@ export const FindMyLandPage: React.FC = () => {
     </div>
   );
 };
-

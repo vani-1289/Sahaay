@@ -23,7 +23,6 @@ if (process.env.NODE_ENV === 'production' && dbUrl) {
     });
     console.log('✅ PostgreSQL database migrations deployed successfully.');
   } catch (err) {
-    // Handle Prisma P3005 ("The database schema is not empty") by baselining the initial migration
     console.warn('⚠️ migrate deploy encountered an issue. Checking if baseline is needed (P3005)...');
     try {
       execSync(`npx prisma migrate resolve --applied 20260928000000_init --schema="${schemaPath}"`, {
@@ -38,7 +37,7 @@ if (process.env.NODE_ENV === 'production' && dbUrl) {
       console.log('✅ PostgreSQL database migrations deployed successfully.');
     } catch (baselineErr) {
       console.error('❌ Migration failed, refusing to start server:', err);
-      process.exit(1); // Fail-fast if migration truly cannot proceed
+      process.exit(1);
     }
   }
 }
@@ -59,7 +58,7 @@ const DEFAULT_PASSWORD_HASH = '$2a$10$.2WLWTAp5Vx7wV6Fq9GgZexiva8uToe71SCfKTTV6t
 
 const SNAPSHOT_FILE = path.resolve(__dirname, '../../storage/sahaay_db_records.json');
 
-// In-Memory Database store populated with full SAHAAY demo dataset
+// In-Memory Database store populated with full SAHAAY Bhopal demo dataset matching Cadastral GIS & reference specs
 const inMemoryStore: {
   users: any[];
   profiles: any[];
@@ -83,6 +82,116 @@ const inMemoryStore: {
       name: 'Rajesh Sharma',
       role: 'CITIZEN',
       phone: '+91 98260 12345',
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'usr-geeta-01',
+      email: 'geeta.singh@sahaay.demo',
+      passwordHash: DEFAULT_PASSWORD_HASH,
+      name: 'Geeta Singh',
+      role: 'CITIZEN',
+      phone: '+91 94250 88712',
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'usr-anita-01',
+      email: 'anita.chouhan@sahaay.demo',
+      passwordHash: DEFAULT_PASSWORD_HASH,
+      name: 'Anita Chouhan',
+      role: 'CITIZEN',
+      phone: '+91 98270 45612',
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'usr-digvijay-01',
+      email: 'digvijay.patel@sahaay.demo',
+      passwordHash: DEFAULT_PASSWORD_HASH,
+      name: 'Digvijay Singh Patel',
+      role: 'CITIZEN',
+      phone: '+91 97520 63489',
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'usr-ramesh-01',
+      email: 'ramesh.yadav@sahaay.demo',
+      passwordHash: DEFAULT_PASSWORD_HASH,
+      name: 'Ramesh Yadav',
+      role: 'CITIZEN',
+      phone: '+91 98263 71829',
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'usr-manoj-01',
+      email: 'manoj.tiwari@sahaay.demo',
+      passwordHash: DEFAULT_PASSWORD_HASH,
+      name: 'Manoj Tiwari',
+      role: 'CITIZEN',
+      phone: '+91 94251 63920',
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'usr-sunil-01',
+      email: 'sunil.verma@sahaay.demo',
+      passwordHash: DEFAULT_PASSWORD_HASH,
+      name: 'Sunil Verma',
+      role: 'CITIZEN',
+      phone: '+91 97555 48190',
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'usr-pradeep-01',
+      email: 'pradeep.meena@sahaay.demo',
+      passwordHash: DEFAULT_PASSWORD_HASH,
+      name: 'Pradeep Meena',
+      role: 'CITIZEN',
+      phone: '+91 98260 99412',
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'usr-kamlesh-01',
+      email: 'kamlesh.sharma@sahaay.demo',
+      passwordHash: DEFAULT_PASSWORD_HASH,
+      name: 'Kamlesh Sharma',
+      role: 'CITIZEN',
+      phone: '+91 94254 38201',
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'usr-suresh-01',
+      email: 'suresh.lodhi@sahaay.demo',
+      passwordHash: DEFAULT_PASSWORD_HASH,
+      name: 'Suresh Lodhi',
+      role: 'CITIZEN',
+      phone: '+91 98272 55019',
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'usr-bhupendra-01',
+      email: 'bhupendra.singh@sahaay.demo',
+      passwordHash: DEFAULT_PASSWORD_HASH,
+      name: 'Bhupendra Singh',
+      role: 'CITIZEN',
+      phone: '+91 97531 22904',
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'usr-deepak-01',
+      email: 'deepak.saxena@sahaay.demo',
+      passwordHash: DEFAULT_PASSWORD_HASH,
+      name: 'Deepak Saxena',
+      role: 'CITIZEN',
+      phone: '+91 98261 44782',
       createdAt: new Date('2026-08-01'),
       updatedAt: new Date(),
     },
@@ -130,8 +239,37 @@ const inMemoryStore: {
       createdAt: new Date('2026-08-01'),
       updatedAt: new Date(),
     },
+    {
+      id: 'prof-geeta-01',
+      userId: 'usr-geeta-01',
+      village: 'Chandanpura (चंदनपुरा)',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      aadhaarMasked: 'XXXX-XXXX-4512',
+      panNumber: 'BKLPS9821F',
+      panStatus: 'VERIFIED',
+      faceMatchStatus: 'VERIFIED',
+      preferredLanguage: 'hi',
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
   ],
   projects: [
+    {
+      id: 'proj-nhai-stg8',
+      name: 'National Highway Expansion (NHAI) — Stage 8',
+      code: 'NHAI-STG8',
+      description: 'National Highway corridor 4-to-6 laning and eco-buffer perimeter around outer Bhopal.',
+      department: 'National Highways Authority of India (NHAI)',
+      status: 'ACTIVE',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      totalAreaHa: 185.0,
+      budgetINR: 580000000.0,
+      createdAt: new Date('2026-01-10'),
+      updatedAt: new Date(),
+    },
     {
       id: 'proj-nh46-01',
       name: 'NH-46 6-Laning Highway Expansion Project (Bhopal-Hoshangabad Corridor)',
@@ -146,17 +284,65 @@ const inMemoryStore: {
       createdAt: new Date('2026-01-10'),
       updatedAt: new Date(),
     },
+    {
+      id: 'proj-metro-ph2',
+      name: 'Bhopal Metro Phase 2 (Orange Line Extension)',
+      code: 'BMRCL-PH2',
+      description: 'AIIMS to Karond via Misrod and Shahpura metro railway corridor.',
+      department: 'Madhya Pradesh Metro Rail Corporation Limited (MPMRCL)',
+      status: 'ACTIVE',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      totalAreaHa: 64.0,
+      budgetINR: 690000000.0,
+      createdAt: new Date('2026-02-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'proj-airport-logistics',
+      name: 'Raja Bhoj Airport Multi-Modal Logistics Hub',
+      code: 'RBA-LOGISTICS',
+      description: 'Cargo and commercial freight transit zone expansion near Bairagarh Kalan.',
+      department: 'Airports Authority of India & MPIDC',
+      status: 'ACTIVE',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      totalAreaHa: 95.0,
+      budgetINR: 310000000.0,
+      createdAt: new Date('2026-03-01'),
+      updatedAt: new Date(),
+    },
   ],
   parcels: [
+    {
+      id: 'parcel-bh-558',
+      surveyNumber: '558/3',
+      khasraNumber: '558/3',
+      parcelCode: 'MP-BH-031',
+      village: 'Chandanpura (चंदनपुरा)',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 5.41,
+      recordedAreaAcres: 13.37,
+      landType: 'Forest Buffer (वन सीमावर्ती)',
+      currentStatus: 'Approved',
+      centroidLat: 23.1850,
+      centroidLng: 77.3820,
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
     {
       id: 'parcel-1042',
       surveyNumber: '1042',
       khasraNumber: '1042/1',
+      parcelCode: 'MP-BH-1042',
       village: 'Rampur',
       tehsil: 'Huzur',
       district: 'Bhopal',
       state: 'Madhya Pradesh',
       recordedAreaHa: 2.43,
+      recordedAreaAcres: 6.00,
       landType: 'Agricultural',
       currentStatus: 'Under Verification',
       centroidLat: 23.2599,
@@ -168,20 +354,218 @@ const inMemoryStore: {
       id: 'parcel-1043',
       surveyNumber: '1043',
       khasraNumber: '1043/2',
+      parcelCode: 'MP-BH-1043',
       village: 'Rampur',
       tehsil: 'Huzur',
       district: 'Bhopal',
       state: 'Madhya Pradesh',
       recordedAreaHa: 1.85,
+      recordedAreaAcres: 4.57,
       landType: 'Agricultural',
-      currentStatus: 'Award Declared',
+      currentStatus: 'Acquired',
       centroidLat: 23.2612,
       centroidLng: 77.4148,
       createdAt: new Date('2026-08-01'),
       updatedAt: new Date(),
     },
+    {
+      id: 'parcel-bh-88',
+      surveyNumber: '88/1',
+      khasraNumber: '88/1',
+      parcelCode: 'MP-BH-088',
+      village: 'Kolar Kalan (कोलार कलां)',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 3.20,
+      recordedAreaAcres: 7.90,
+      landType: 'Residential Buffer (आवासीय क्षेत्र)',
+      currentStatus: 'Under Acquisition',
+      centroidLat: 23.1720,
+      centroidLng: 77.4200,
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'parcel-bh-214',
+      surveyNumber: '214/2',
+      khasraNumber: '214/2',
+      parcelCode: 'MP-BH-214',
+      village: 'Misrod (मिसरोद)',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 1.65,
+      recordedAreaAcres: 4.07,
+      landType: 'Commercial (व्यावसायिक)',
+      currentStatus: 'Compensation Pending',
+      centroidLat: 23.1480,
+      centroidLng: 77.4620,
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'parcel-bh-340',
+      surveyNumber: '340/5',
+      khasraNumber: '340/5',
+      parcelCode: 'MP-BH-340',
+      village: 'Sukhi Sewaniya (सूखी सेवनिया)',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 4.12,
+      recordedAreaAcres: 10.18,
+      landType: 'Agricultural (कृषि भूमि)',
+      currentStatus: 'Acquired',
+      centroidLat: 23.3350,
+      centroidLng: 77.4850,
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'parcel-bh-142',
+      surveyNumber: '142/3',
+      khasraNumber: '142/3',
+      parcelCode: 'MP-BH-142',
+      village: 'Bairagarh Kalan (बैरागढ़ कलां)',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 2.80,
+      recordedAreaAcres: 6.92,
+      landType: 'Commercial Buffer (व्यावसायिक)',
+      currentStatus: 'Available',
+      centroidLat: 23.2920,
+      centroidLng: 77.3310,
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'parcel-bh-402',
+      surveyNumber: '402/1',
+      khasraNumber: '402/1',
+      parcelCode: 'MP-BH-402',
+      village: 'Bilkhiriya (बिलखिरिया)',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 5.05,
+      recordedAreaAcres: 12.48,
+      landType: 'Industrial (औद्योगिक)',
+      currentStatus: 'Utilized',
+      centroidLat: 23.2450,
+      centroidLng: 77.5320,
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'parcel-bh-719',
+      surveyNumber: '719/2',
+      khasraNumber: '719/2',
+      parcelCode: 'MP-BH-719',
+      village: 'Karond (करोंद)',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 1.95,
+      recordedAreaAcres: 4.82,
+      landType: 'Agricultural (कृषि भूमि)',
+      currentStatus: 'Disputed',
+      centroidLat: 23.3050,
+      centroidLng: 77.4080,
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'parcel-bh-995',
+      surveyNumber: '995/4',
+      khasraNumber: '995/4',
+      parcelCode: 'MP-BH-995',
+      village: 'Mandideep (मंडीदीप)',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 3.75,
+      recordedAreaAcres: 9.26,
+      landType: 'Industrial Buffer (औद्योगिक)',
+      currentStatus: 'Under Acquisition',
+      centroidLat: 23.0850,
+      centroidLng: 77.5250,
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'parcel-bh-631',
+      surveyNumber: '631/1',
+      khasraNumber: '631/1',
+      parcelCode: 'MP-BH-631',
+      village: 'Berasia Gram (बैरसिया)',
+      tehsil: 'Berasia',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 6.20,
+      recordedAreaAcres: 15.32,
+      landType: 'Agricultural (कृषि भूमि)',
+      currentStatus: 'Approved',
+      centroidLat: 23.6300,
+      centroidLng: 77.4320,
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'parcel-bh-185',
+      surveyNumber: '185/2',
+      khasraNumber: '185/2',
+      parcelCode: 'MP-BH-185',
+      village: 'Phanda Kalan (फंदा कलां)',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 4.50,
+      recordedAreaAcres: 11.12,
+      landType: 'Agricultural (कृषि भूमि)',
+      currentStatus: 'Compensation Pending',
+      centroidLat: 23.2380,
+      centroidLng: 77.2450,
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'parcel-bh-512',
+      surveyNumber: '512/7',
+      khasraNumber: '512/7',
+      parcelCode: 'MP-BH-512',
+      village: 'Shahpura (शाहपुरा)',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 1.25,
+      recordedAreaAcres: 3.09,
+      landType: 'Urban Mixed (मिश्रित उपयोग)',
+      currentStatus: 'Under Verification',
+      centroidLat: 23.2050,
+      centroidLng: 77.4390,
+      createdAt: new Date('2026-08-01'),
+      updatedAt: new Date(),
+    },
   ],
   cases: [
+    {
+      id: 'case-bh-558',
+      caseReference: 'ACQ-2026-MP-5583',
+      parcelId: 'parcel-bh-558',
+      projectId: 'proj-nhai-stg8',
+      citizenId: 'usr-geeta-01',
+      stage: 'AWARD',
+      status: 'ACTIVE',
+      notificationSection: 'Section 19(1) Declaration (RFCTLARR Act, 2013)',
+      noticeDate: new Date('2026-07-20'),
+      estimatedCompensationINR: 4520000.0,
+      disbursedCompensationINR: 0.0,
+      remarks: 'Forest buffer parcel acquisition sanctioned under National Highway Expansion Stage 8. Joint cadastral survey verified.',
+      createdAt: new Date('2026-07-20'),
+      updatedAt: new Date(),
+    },
     {
       id: 'case-1042-01',
       caseReference: 'ACQ-2026-MP-1042',
@@ -198,17 +582,221 @@ const inMemoryStore: {
       createdAt: new Date('2026-08-12'),
       updatedAt: new Date(),
     },
+    {
+      id: 'case-1043-01',
+      caseReference: 'ACQ-2026-MP-1043',
+      parcelId: 'parcel-1043',
+      projectId: 'proj-nh46-01',
+      citizenId: 'usr-citizen-01',
+      stage: 'COMPENSATION',
+      status: 'COMPLETED',
+      notificationSection: 'Section 23 Award Declared',
+      noticeDate: new Date('2026-06-15'),
+      estimatedCompensationINR: 3240000.0,
+      disbursedCompensationINR: 3240000.0,
+      remarks: 'Award declared and DBT disbursement completed via PFMS.',
+      createdAt: new Date('2026-06-15'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'case-bh-88',
+      caseReference: 'ACQ-2026-MP-0881',
+      parcelId: 'parcel-bh-88',
+      projectId: 'proj-nh46-01',
+      citizenId: 'usr-anita-01',
+      stage: 'VERIFICATION',
+      status: 'ACTIVE',
+      notificationSection: 'Section 11(1) Notice Issued',
+      noticeDate: new Date('2026-08-18'),
+      estimatedCompensationINR: 5800000.0,
+      disbursedCompensationINR: 0.0,
+      remarks: 'Kolar road widening alignment verification under progress.',
+      createdAt: new Date('2026-08-18'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'case-bh-214',
+      caseReference: 'ACQ-2026-MP-0214',
+      parcelId: 'parcel-bh-214',
+      projectId: 'proj-metro-ph2',
+      citizenId: 'usr-digvijay-01',
+      stage: 'AWARD',
+      status: 'ACTIVE',
+      notificationSection: 'Section 19 Declaration',
+      noticeDate: new Date('2026-05-10'),
+      estimatedCompensationINR: 7280000.0,
+      disbursedCompensationINR: 0.0,
+      remarks: 'Metro line commercial corridor compensation calculation under final review.',
+      createdAt: new Date('2026-05-10'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'case-bh-340',
+      caseReference: 'ACQ-2026-MP-0340',
+      parcelId: 'parcel-bh-340',
+      projectId: 'proj-nhai-stg8',
+      citizenId: 'usr-ramesh-01',
+      stage: 'POSSESSION',
+      status: 'COMPLETED',
+      notificationSection: 'Section 38 Possession Handover',
+      noticeDate: new Date('2026-04-12'),
+      estimatedCompensationINR: 6420000.0,
+      disbursedCompensationINR: 6420000.0,
+      remarks: 'Northern ring road bypass segment. Land possession completed.',
+      createdAt: new Date('2026-04-12'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'case-bh-142',
+      caseReference: 'ACQ-2026-MP-0142',
+      parcelId: 'parcel-bh-142',
+      projectId: 'proj-airport-logistics',
+      citizenId: 'usr-manoj-01',
+      stage: 'PROPOSAL',
+      status: 'PENDING',
+      notificationSection: 'Section 4 SIA Completed',
+      noticeDate: new Date('2026-08-25'),
+      estimatedCompensationINR: 4890000.0,
+      disbursedCompensationINR: 0.0,
+      remarks: 'Airport freight buffer assessment pending final notification.',
+      createdAt: new Date('2026-08-25'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'case-bh-402',
+      caseReference: 'ACQ-2026-MP-0402',
+      parcelId: 'parcel-bh-402',
+      projectId: 'proj-nhai-stg8',
+      citizenId: 'usr-sunil-01',
+      stage: 'CLOSURE',
+      status: 'COMPLETED',
+      notificationSection: 'Section 99 Project Completion',
+      noticeDate: new Date('2026-01-20'),
+      estimatedCompensationINR: 8800000.0,
+      disbursedCompensationINR: 8800000.0,
+      remarks: 'Industrial logistics parcel fully utilized and highway wing operational.',
+      createdAt: new Date('2026-01-20'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'case-bh-719',
+      caseReference: 'ACQ-2026-MP-0719',
+      parcelId: 'parcel-bh-719',
+      projectId: 'proj-nh46-01',
+      citizenId: 'usr-pradeep-01',
+      stage: 'VERIFICATION',
+      status: 'DISPUTED',
+      notificationSection: 'Section 15 Objection Filed',
+      noticeDate: new Date('2026-08-05'),
+      estimatedCompensationINR: 3950000.0,
+      disbursedCompensationINR: 0.0,
+      remarks: 'Dispute raised regarding boundary marker overlap with state road.',
+      createdAt: new Date('2026-08-05'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'case-bh-995',
+      caseReference: 'ACQ-2026-MP-0995',
+      parcelId: 'parcel-bh-995',
+      projectId: 'proj-nhai-stg8',
+      citizenId: 'usr-kamlesh-01',
+      stage: 'NOTIFICATION',
+      status: 'ACTIVE',
+      notificationSection: 'Section 11(1) Preliminary Gazette',
+      noticeDate: new Date('2026-08-28'),
+      estimatedCompensationINR: 6100000.0,
+      disbursedCompensationINR: 0.0,
+      remarks: 'Mandideep freight corridor notice issued. Joint inspection pending.',
+      createdAt: new Date('2026-08-28'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'case-bh-631',
+      caseReference: 'ACQ-2026-MP-0631',
+      parcelId: 'parcel-bh-631',
+      projectId: 'proj-nhai-stg8',
+      citizenId: 'usr-suresh-01',
+      stage: 'AWARD',
+      status: 'ACTIVE',
+      notificationSection: 'Section 23 Sanction Approved',
+      noticeDate: new Date('2026-07-15'),
+      estimatedCompensationINR: 5100000.0,
+      disbursedCompensationINR: 0.0,
+      remarks: 'Berasia agricultural bypass award finalized. Treasury token generated.',
+      createdAt: new Date('2026-07-15'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'case-bh-185',
+      caseReference: 'ACQ-2026-MP-0185',
+      parcelId: 'parcel-bh-185',
+      projectId: 'proj-nhai-stg8',
+      citizenId: 'usr-bhupendra-01',
+      stage: 'AWARD',
+      status: 'ACTIVE',
+      notificationSection: 'Section 23 Award Sanctioned',
+      noticeDate: new Date('2026-06-30'),
+      estimatedCompensationINR: 7640000.0,
+      disbursedCompensationINR: 0.0,
+      remarks: 'Phanda expressway greenfield link compensation awaiting PFMS clearance.',
+      createdAt: new Date('2026-06-30'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'case-bh-512',
+      caseReference: 'ACQ-2026-MP-0512',
+      parcelId: 'parcel-bh-512',
+      projectId: 'proj-metro-ph2',
+      citizenId: 'usr-deepak-01',
+      stage: 'VERIFICATION',
+      status: 'ACTIVE',
+      notificationSection: 'Section 11(1) Notice',
+      noticeDate: new Date('2026-08-22'),
+      estimatedCompensationINR: 4180000.0,
+      disbursedCompensationINR: 0.0,
+      remarks: 'Shahpura urban link verification in progress with town planning.',
+      createdAt: new Date('2026-08-22'),
+      updatedAt: new Date(),
+    },
   ],
   compensations: [
+    {
+      id: 'comp-bh-558',
+      caseId: 'case-bh-558',
+      baseMarketValueINR: 2100000.0,
+      marketMultiplier: 1.0,
+      marketValueWithMultiplierINR: 2100000.0,
+      landAssessmentINR: 2100000.0,
+      assetAssessmentINR: 320000.0,
+      treesAssetsValueINR: 320000.0,
+      solatiumPercentage: 100.0,
+      solatiumINR: 2100000.0,
+      interestINR: 0.0,
+      additionalInterestINR: 0.0,
+      totalCompensationINR: 4520000.0,
+      totalAssessedINR: 4520000.0,
+      assessmentStatus: 'APPROVED',
+      paymentStatus: 'SANCTIONED',
+      dbtStatus: 'APPROVED',
+      pfmsBatchNumber: 'PFMS-2026-MP-05583',
+      pfmsReference: 'PFMS-2026-MP-05583',
+      bankAccountMasked: 'HDFC A/C ending in 6641',
+      ifscCode: 'HDFC0000214',
+      createdAt: new Date('2026-07-25'),
+      updatedAt: new Date(),
+    },
     {
       id: 'comp-1042-01',
       caseId: 'case-1042-01',
       baseMarketValueINR: 1850000.0,
       marketMultiplier: 1.0,
       marketValueWithMultiplierINR: 1850000.0,
+      landAssessmentINR: 1850000.0,
+      assetAssessmentINR: 120000.0,
+      treesAssetsValueINR: 120000.0,
       solatiumPercentage: 100.0,
       solatiumINR: 1850000.0,
-      treesAssetsValueINR: 120000.0,
+      interestINR: 230000.0,
       additionalInterestINR: 230000.0,
       totalCompensationINR: 4250000.0,
       totalAssessedINR: 4250000.0,
@@ -218,7 +806,44 @@ const inMemoryStore: {
       pfmsBatchNumber: 'PFMS-2026-MP-08912',
       pfmsReference: 'PFMS-2026-MP-08912',
       bankAccountMasked: 'SBI A/C ending in 4910',
+      ifscCode: 'SBIN0001042',
       createdAt: new Date('2026-08-20'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'comp-bh-88',
+      caseId: 'case-bh-88',
+      baseMarketValueINR: 2700000.0,
+      marketMultiplier: 1.0,
+      marketValueWithMultiplierINR: 2700000.0,
+      landAssessmentINR: 2700000.0,
+      assetAssessmentINR: 400000.0,
+      solatiumPercentage: 100.0,
+      solatiumINR: 2700000.0,
+      interestINR: 0.0,
+      totalCompensationINR: 5800000.0,
+      totalAssessedINR: 5800000.0,
+      assessmentStatus: 'ASSESSED',
+      paymentStatus: 'PROCESSING',
+      createdAt: new Date('2026-08-20'),
+      updatedAt: new Date(),
+    },
+    {
+      id: 'comp-bh-214',
+      caseId: 'case-bh-214',
+      baseMarketValueINR: 3400000.0,
+      marketMultiplier: 1.0,
+      marketValueWithMultiplierINR: 3400000.0,
+      landAssessmentINR: 3400000.0,
+      assetAssessmentINR: 480000.0,
+      solatiumPercentage: 100.0,
+      solatiumINR: 3400000.0,
+      interestINR: 0.0,
+      totalCompensationINR: 7280000.0,
+      totalAssessedINR: 7280000.0,
+      assessmentStatus: 'ASSESSED',
+      paymentStatus: 'PENDING',
+      createdAt: new Date('2026-05-15'),
       updatedAt: new Date(),
     },
   ],
@@ -238,6 +863,21 @@ const inMemoryStore: {
       createdAt: new Date('2026-08-20'),
       updatedAt: new Date(),
     },
+    {
+      id: 'rr-bh-558',
+      caseId: 'case-bh-558',
+      familyMembersCount: 4,
+      resettlementAllowanceINR: 75000.0,
+      transportGrantINR: 50000.0,
+      subsistenceGrantINR: 50000.0,
+      housingAssistanceINR: 150000.0,
+      livelihoodGrantINR: 50000.0,
+      totalRRGrantINR: 325000.0,
+      assessmentStatus: 'SANCTIONED',
+      status: 'APPROVED',
+      createdAt: new Date('2026-07-25'),
+      updatedAt: new Date(),
+    },
   ],
   actions: [
     {
@@ -253,21 +893,22 @@ const inMemoryStore: {
       createdAt: new Date(),
       updatedAt: new Date(),
     },
-    {
-      id: 'act-02',
-      caseId: 'case-1042-01',
-      citizenId: 'usr-citizen-01',
-      title: 'Verify Bank Account Details',
-      description: 'Ensure NPCI mapping is active for direct PFMS disbursement.',
-      actionType: 'VERIFY_BANK',
-      status: 'COMPLETED',
-      deadline: new Date(Date.now() + 30 * 86400000),
-      priority: 'HIGH',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
   ],
   documents: [
+    {
+      id: 'doc-bh-558-1',
+      caseId: 'case-bh-558',
+      parcelId: 'parcel-bh-558',
+      uploaderId: 'usr-geeta-01',
+      title: 'Section 19 Declaration Gazette Notice (Chandanpura)',
+      documentType: 'ACQUISITION_NOTICE',
+      fileUrl: '/storage/documents/demo-notice-1042.pdf',
+      fileSize: 218520,
+      mimeType: 'application/pdf',
+      verificationStatus: 'UNDER_REVIEW',
+      createdAt: new Date('2026-07-22'),
+      updatedAt: new Date(),
+    },
     {
       id: 'doc-01',
       caseId: 'case-1042-01',
@@ -292,15 +933,6 @@ const inMemoryStore: {
       type: 'STATUS_UPDATE',
       isRead: false,
       createdAt: new Date(),
-    },
-    {
-      id: 'notif-02',
-      userId: 'usr-citizen-01',
-      title: 'Gazette Notice Published',
-      message: 'Notice under Section 11(1) for NH-46 expansion published for Rampur village.',
-      type: 'NOTICE_ISSUED',
-      isRead: false,
-      createdAt: new Date(Date.now() - 3600000),
     },
   ],
   grievances: [
@@ -337,15 +969,6 @@ const inMemoryStore: {
       description: 'Gazette notification issued under Section 11(1) of the RFCTLARR Act, 2013.',
       eventDate: new Date('2026-08-12'),
       status: 'COMPLETED',
-    },
-    {
-      id: 'ev-03',
-      caseId: 'case-1042-01',
-      stage: 'VERIFICATION',
-      title: 'Cadastral Ground Verification & Section 15 Objections',
-      description: 'Revenue survey inspection and submission of citizen objections.',
-      eventDate: new Date('2026-09-01'),
-      status: 'CURRENT',
     },
   ],
   auditLogs: [],
@@ -405,6 +1028,8 @@ function loadStoreSnapshot(): void {
   }
 }
 loadStoreSnapshot();
+// Always save updated Bhopal parcels to snapshot file immediately
+saveStoreSnapshot();
 
 // Fast local PostgreSQL reachability check to prevent 4-5s Prisma timeouts
 let isPostgresAvailable = false;
@@ -513,25 +1138,6 @@ const mockDb: any = {
         inMemoryStore.profiles.push(createdProfile);
       }
 
-      // Link sample parcel and case to new citizen for rich onboarding experience
-      const newCase = {
-        id: `case-reg-${Date.now()}`,
-        caseReference: `ACQ-2026-MP-${Math.floor(1000 + Math.random() * 9000)}`,
-        parcelId: 'parcel-1042',
-        projectId: 'proj-nh46-01',
-        citizenId: id,
-        stage: 'VERIFICATION',
-        status: 'ACTIVE',
-        notificationSection: 'Section 11(1) of RFCTLARR Act, 2013',
-        noticeDate: new Date(),
-        estimatedCompensationINR: 3840000.0,
-        disbursedCompensationINR: 0.0,
-        remarks: 'New citizen registration. Land acquisition record cross-referenced and activated.',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      inMemoryStore.cases.push(newCase);
-
       saveStoreSnapshot();
 
       const copy: any = { ...newUser };
@@ -600,7 +1206,7 @@ const mockDb: any = {
             (caseRef && x.caseReference === caseRef)
         );
       }
-      if (!c) return inMemoryStore.cases[0] ? populateCase(inMemoryStore.cases[0], args?.include) : null;
+      if (!c) return null;
       return populateCase(c, args?.include);
     },
     findMany: async (args: any) => {
@@ -611,17 +1217,17 @@ const mockDb: any = {
       if (args?.where?.status) {
         list = list.filter((c) => c.status === args.where.status);
       }
-      if (list.length === 0 && inMemoryStore.cases[0]) {
-        list = [inMemoryStore.cases[0]];
-      }
       return list.map((c) => populateCase(c, args?.include));
     },
     findUnique: async (args: any) => {
       const id = args?.where?.id;
-      const c = inMemoryStore.cases.find((x) => x.id === id) || inMemoryStore.cases[0];
+      const c = inMemoryStore.cases.find((x) => x.id === id);
       return c ? populateCase(c, args?.include) : null;
     },
     count: async (args: any) => {
+      if (args?.where?.citizenId) {
+        return inMemoryStore.cases.filter((c) => c.citizenId === args.where.citizenId).length;
+      }
       if (args?.where?.status) {
         return inMemoryStore.cases.filter((c) => c.status === args.where.status).length;
       }
@@ -644,29 +1250,120 @@ const mockDb: any = {
   parcel: {
     findUnique: async (args: any) => {
       const id = args?.where?.id;
-      const p = inMemoryStore.parcels.find((x) => x.id === id);
-      return p ? populateParcel(p, args?.include) : populateParcel(inMemoryStore.parcels[0], args?.include);
+      const surveyNumber = args?.where?.surveyNumber;
+      let p = inMemoryStore.parcels.find((x) => (id && x.id === id) || (surveyNumber && x.surveyNumber === surveyNumber));
+      if (!p && id) {
+        p = inMemoryStore.parcels.find(
+          (x) => x.surveyNumber === id || x.khasraNumber === id || (x.parcelCode && x.parcelCode === id)
+        );
+      }
+      return p ? populateParcel(p, args?.include) : null;
     },
     findFirst: async (args: any) => {
       const surveyNumber = args?.where?.surveyNumber;
-      if (surveyNumber) {
-        const p = inMemoryStore.parcels.find((x) => x.surveyNumber === surveyNumber);
-        if (p) return populateParcel(p, args?.include);
+      const village = args?.where?.village?.contains;
+      const id = args?.where?.id;
+      const orList = args?.where?.OR;
+
+      let p = null;
+      if (orList && Array.isArray(orList)) {
+        for (const cond of orList) {
+          if (cond.id) p = inMemoryStore.parcels.find((x) => x.id === cond.id || x.surveyNumber === cond.id || (x.khasraNumber && x.khasraNumber === cond.id));
+          if (!p && cond.surveyNumber) p = inMemoryStore.parcels.find((x) => x.surveyNumber === cond.surveyNumber || x.khasraNumber === cond.surveyNumber);
+          if (p) break;
+        }
       }
-      return inMemoryStore.parcels[0] ? populateParcel(inMemoryStore.parcels[0], args?.include) : null;
+      if (!p) {
+        p = inMemoryStore.parcels.find((x) => {
+          if (id && x.id !== id && x.surveyNumber !== id && x.khasraNumber !== id) return false;
+          if (surveyNumber && x.surveyNumber !== surveyNumber && x.khasraNumber !== surveyNumber) return false;
+          if (village && !x.village.toLowerCase().includes(village.toLowerCase())) return false;
+          return true;
+        });
+      }
+      return p ? populateParcel(p, args?.include) : null;
     },
     findMany: async (args: any) => {
-      return inMemoryStore.parcels.map((p) => populateParcel(p, args?.include));
+      let list = inMemoryStore.parcels;
+      if (args?.where) {
+        const w = args.where;
+        list = list.filter((p) => {
+          if (w.id?.in && Array.isArray(w.id.in)) {
+            if (!w.id.in.includes(p.id)) return false;
+          }
+          if (w.cases?.some?.citizenId) {
+            const pCases = inMemoryStore.cases.filter((c) => c.parcelId === p.id);
+            if (!pCases.some((c) => c.citizenId === w.cases.some.citizenId)) return false;
+          }
+          if (w.surveyNumber?.contains) {
+            const term = w.surveyNumber.contains.toLowerCase().trim();
+            const matchSurvey = p.surveyNumber.toLowerCase().includes(term);
+            const matchKhasra = p.khasraNumber && p.khasraNumber.toLowerCase().includes(term);
+            const matchId = p.id.toLowerCase().includes(term);
+            const matchCode = p.parcelCode && p.parcelCode.toLowerCase().includes(term);
+            if (!matchSurvey && !matchKhasra && !matchId && !matchCode) return false;
+          }
+          if (w.village?.contains) {
+            const term = w.village.contains.toLowerCase().trim();
+            if (!p.village.toLowerCase().includes(term)) return false;
+          }
+          if (w.district?.contains) {
+            const term = w.district.contains.toLowerCase().trim();
+            if (!p.district.toLowerCase().includes(term)) return false;
+          }
+          if (w.OR && Array.isArray(w.OR)) {
+            const matchesOr = w.OR.some((cond: any) => {
+              if (cond.surveyNumber?.contains && p.surveyNumber.toLowerCase().includes(cond.surveyNumber.contains.toLowerCase())) return true;
+              if (cond.khasraNumber?.contains && p.khasraNumber && p.khasraNumber.toLowerCase().includes(cond.khasraNumber.contains.toLowerCase())) return true;
+              if (cond.village?.contains && p.village.toLowerCase().includes(cond.village.contains.toLowerCase())) return true;
+              if (cond.district?.contains && p.district.toLowerCase().includes(cond.district.contains.toLowerCase())) return true;
+              if (cond.cases?.some?.OR) {
+                const pCases = inMemoryStore.cases.filter((c) => c.parcelId === p.id);
+                return pCases.some((c) => {
+                  const proj = inMemoryStore.projects.find((pr) => pr.id === c.projectId);
+                  return cond.cases.some.OR.some((subCond: any) => {
+                    if (subCond.caseReference?.contains && c.caseReference.toLowerCase().includes(subCond.caseReference.contains.toLowerCase())) return true;
+                    if (subCond.project?.name?.contains && proj && proj.name.toLowerCase().includes(subCond.project.name.contains.toLowerCase())) return true;
+                    return false;
+                  });
+                });
+              }
+              return false;
+            });
+            if (!matchesOr) return false;
+          }
+          return true;
+        });
+      }
+      return list.map((p) => populateParcel(p, args?.include));
     },
     count: async () => inMemoryStore.parcels.length,
+    update: async (args: any) => {
+      const id = args?.where?.id;
+      const p = inMemoryStore.parcels.find((x) => x.id === id || x.surveyNumber === id);
+      if (p) {
+        Object.assign(p, args.data, { updatedAt: new Date() });
+        saveStoreSnapshot();
+        return populateParcel(p, args?.include);
+      }
+      return null;
+    },
   },
   project: {
-    findUnique: async () => inMemoryStore.projects[0] || null,
+    findUnique: async (args: any) => {
+      const id = args?.where?.id;
+      return inMemoryStore.projects.find((pr) => pr.id === id) || inMemoryStore.projects[0] || null;
+    },
     findFirst: async () => inMemoryStore.projects[0] || null,
     findMany: async () => inMemoryStore.projects.map((p) => ({ ...p })),
   },
   document: {
-    findMany: async () => inMemoryStore.documents.map((d) => ({ ...d })),
+    findMany: async (args: any) => {
+      let list = inMemoryStore.documents;
+      if (args?.where?.parcelId) list = list.filter((d) => d.parcelId === args.where.parcelId);
+      if (args?.where?.caseId) list = list.filter((d) => d.caseId === args.where.caseId);
+      return list.map((d) => ({ ...d }));
+    },
     findUnique: async (args: any) => inMemoryStore.documents.find((d) => d.id === args?.where?.id) || inMemoryStore.documents[0] || null,
     findFirst: async () => inMemoryStore.documents[0] || null,
     create: async (args: any) => {
@@ -736,7 +1433,7 @@ const mockDb: any = {
         .filter((g) => !userId || g.citizenId === userId)
         .map((g) => populateGrievance(g));
     },
-    findFirst: async (args: any) => {
+    findFirst: async () => {
       const g = inMemoryStore.grievances[0] || null;
       return g ? populateGrievance(g) : null;
     },
@@ -765,14 +1462,30 @@ const mockDb: any = {
     },
   },
   compensationRecord: {
-    findFirst: async () => inMemoryStore.compensations[0] || null,
+    findFirst: async (args: any) => {
+      const caseId = args?.where?.caseId;
+      const comp = inMemoryStore.compensations.find((c) => !caseId || c.caseId === caseId) || inMemoryStore.compensations[0];
+      return comp ? { ...comp } : null;
+    },
     findMany: async () => inMemoryStore.compensations.map((c) => ({ ...c })),
-    findUnique: async () => inMemoryStore.compensations[0] || null,
+    findUnique: async (args: any) => {
+      const caseId = args?.where?.caseId;
+      const comp = inMemoryStore.compensations.find((c) => !caseId || c.caseId === caseId) || inMemoryStore.compensations[0];
+      return comp ? { ...comp } : null;
+    },
   },
   rRRecord: {
-    findFirst: async () => inMemoryStore.rrRecords[0] || null,
+    findFirst: async (args: any) => {
+      const caseId = args?.where?.caseId;
+      const rr = inMemoryStore.rrRecords.find((r) => !caseId || r.caseId === caseId) || inMemoryStore.rrRecords[0];
+      return rr ? { ...rr } : null;
+    },
     findMany: async () => inMemoryStore.rrRecords.map((r) => ({ ...r })),
-    findUnique: async () => inMemoryStore.rrRecords[0] || null,
+    findUnique: async (args: any) => {
+      const caseId = args?.where?.caseId;
+      const rr = inMemoryStore.rrRecords.find((r) => !caseId || r.caseId === caseId) || inMemoryStore.rrRecords[0];
+      return rr ? { ...rr } : null;
+    },
   },
   acquisitionEvent: {
     findMany: async () => inMemoryStore.events.map((e) => ({ ...e })),
@@ -814,73 +1527,51 @@ function populateGrievance(g: any) {
 
 function populateParcel(p: any, include?: any) {
   const res = { ...p };
-  if (include?.cases) {
-    const matchedCases = inMemoryStore.cases
-      .filter((c) => c.parcelId === p.id)
-      .map((c) => {
-        const citizen = inMemoryStore.users.find((u) => u.id === c.citizenId) || inMemoryStore.users[0];
-        return {
-          ...c,
-          project: { ...inMemoryStore.projects[0] },
-          citizen: { id: citizen.id, name: citizen.name },
-        };
-      });
-    res.cases = matchedCases.length > 0 ? matchedCases : [
-      {
-        ...inMemoryStore.cases[0],
-        project: { ...inMemoryStore.projects[0] },
-        citizen: { id: inMemoryStore.users[0].id, name: inMemoryStore.users[0].name },
-      },
-    ];
-  }
+  const matchedCases = inMemoryStore.cases
+    .filter((c) => c.parcelId === p.id)
+    .map((c) => {
+      const citizen = inMemoryStore.users.find((u) => u.id === c.citizenId) || inMemoryStore.users[0];
+      const proj = inMemoryStore.projects.find((pr) => pr.id === c.projectId) || inMemoryStore.projects[0];
+      const comp = inMemoryStore.compensations.find((cmp) => cmp.caseId === c.id);
+      const docs = inMemoryStore.documents.filter((d) => d.caseId === c.id || d.parcelId === p.id);
+      return {
+        ...c,
+        project: { ...proj },
+        citizen: { id: citizen.id, name: citizen.name, email: citizen.email, phone: citizen.phone },
+        compensationRecord: comp ? { ...comp } : null,
+        documents: docs.map((d) => ({ ...d })),
+      };
+    });
+
+  res.cases = matchedCases;
   return res;
 }
 
 function populateCase(c: any, include: any) {
   const res = { ...c };
-  if (!include) return res;
-  if (include.parcel) {
-    res.parcel = inMemoryStore.parcels.find((p) => p.id === c.parcelId) || inMemoryStore.parcels[0];
-  }
-  if (include.project) {
-    res.project = inMemoryStore.projects.find((pr) => pr.id === c.projectId) || inMemoryStore.projects[0];
-  }
-  if (include.compensationRecord) {
-    res.compensationRecord = inMemoryStore.compensations.find((cmp) => cmp.caseId === c.id) || inMemoryStore.compensations[0];
-  }
-  if (include.rrRecord) {
-    res.rrRecord = inMemoryStore.rrRecords.find((r) => r.caseId === c.id) || inMemoryStore.rrRecords[0];
-  }
-  if (include.events) {
-    res.events = inMemoryStore.events.filter((e) => e.caseId === c.id);
-  }
-  if (include.actionItems) {
-    res.actionItems = inMemoryStore.actions.filter((a) => a.caseId === c.id);
-  }
-  if (include.documents) {
-    res.documents = inMemoryStore.documents.filter((d) => d.caseId === c.id);
-  }
-  if (include.grievances) {
-    res.grievances = inMemoryStore.grievances.filter((g) => g.caseId === c.id);
-  }
-  if (include.citizen) {
-    const cit = inMemoryStore.users.find((u) => u.id === c.citizenId) || inMemoryStore.users[0];
-    const prof = inMemoryStore.profiles.find((p) => p.userId === cit.id) || inMemoryStore.profiles[0];
-    res.citizen = {
-      id: cit.id,
-      name: cit.name,
-      email: cit.email,
-      phone: cit.phone,
-      profile: prof,
-    };
-  }
+  res.parcel = inMemoryStore.parcels.find((p) => p.id === c.parcelId) || inMemoryStore.parcels[0];
+  res.project = inMemoryStore.projects.find((pr) => pr.id === c.projectId) || inMemoryStore.projects[0];
+  res.compensationRecord = inMemoryStore.compensations.find((cmp) => cmp.caseId === c.id) || inMemoryStore.compensations[0];
+  res.rrRecord = inMemoryStore.rrRecords.find((r) => r.caseId === c.id) || inMemoryStore.rrRecords[0];
+  res.events = inMemoryStore.events.filter((e) => e.caseId === c.id);
+  res.actionItems = inMemoryStore.actions.filter((a) => a.caseId === c.id);
+  res.documents = inMemoryStore.documents.filter((d) => d.caseId === c.id || d.parcelId === c.parcelId);
+  res.grievances = inMemoryStore.grievances.filter((g) => g.caseId === c.id);
+  const cit = inMemoryStore.users.find((u) => u.id === c.citizenId) || inMemoryStore.users[0];
+  const prof = inMemoryStore.profiles.find((p) => p.userId === cit.id) || inMemoryStore.profiles[0];
+  res.citizen = {
+    id: cit.id,
+    name: cit.name,
+    email: cit.email,
+    phone: cit.phone,
+    profile: prof,
+  };
   return res;
 }
 
 // Resilient Prisma Proxy with Seamless In-Memory Demo Database Fallback
 export const prisma: PrismaClient = new Proxy(rawPrisma as any, {
   get(target: any, modelName: string) {
-    // Handle top-level Prisma Client methods
     if (modelName === '$queryRaw') {
       return async (...args: any[]) => {
         if (!isPostgresAvailable) return [{ '?column?': 1 }];
@@ -924,7 +1615,6 @@ export const prisma: PrismaClient = new Proxy(rawPrisma as any, {
     return new Proxy(realModel, {
       get(modelTarget: any, methodName: string) {
         return async (...args: any[]) => {
-          // If PostgreSQL was verified down or fallbackModel exists
           if (!isPostgresAvailable && fallbackModel && typeof fallbackModel[methodName] === 'function') {
             return fallbackModel[methodName](...args);
           }

@@ -53,7 +53,13 @@ export const parcelApi = {
     return fetchWithAuth(`/parcels/search?${query}`);
   },
   getParcelById: (id: string) => fetchWithAuth(`/parcels/${id}`),
+  interactWithParcel: (id: string, payload?: { status?: string; action?: string }) =>
+    fetchWithAuth(`/parcels/${id}/interact`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    }),
 };
+
 
 export const documentApi = {
   uploadDocument: (formData: FormData) =>

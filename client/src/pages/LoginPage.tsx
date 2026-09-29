@@ -107,13 +107,19 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const populateDemoUser = (role: 'CITIZEN' | 'OFFICER' | 'ADMIN') => {
+  const populateDemoUser = (userKey: 'GEETA' | 'RAJESH' | 'ANITA' | 'OFFICER' | 'ADMIN') => {
     setIsRegister(false);
     setRegStep(1);
-    if (role === 'CITIZEN') {
+    if (userKey === 'GEETA') {
+      setEmail('geeta.singh@sahaay.demo');
+      setPassword('password123');
+    } else if (userKey === 'RAJESH') {
       setEmail('citizen@sahaay.demo');
       setPassword('password123');
-    } else if (role === 'OFFICER') {
+    } else if (userKey === 'ANITA') {
+      setEmail('anita.chouhan@sahaay.demo');
+      setPassword('password123');
+    } else if (userKey === 'OFFICER') {
       setEmail('officer@sahaay.demo');
       setPassword('password123');
     } else {
@@ -174,11 +180,11 @@ export const LoginPage: React.FC = () => {
           </div>
 
           {/* 1-Click Evaluation Credentials for Hackathon Evaluators */}
-          <div className="bg-[#F5FAFC] border border-[#DDE6EC] p-3 sm:p-3.5 rounded-xl space-y-2">
+          <div className="bg-[#F5FAFC] border border-[#DDE6EC] p-3 sm:p-3.5 rounded-xl space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#123B5D] flex items-center gap-1.5">
                 <UserCheck className="w-4 h-4 text-[#123B5D]" />
-                {t('demoAccountsTitle', language)}
+                <span>1-Click Evaluator Accounts (Different Land Owners vs Officer)</span>
               </span>
               <span className="text-[10px] bg-[#E8B84A] text-[#123B5D] font-extrabold px-2 py-0.5 rounded">
                 {t('demoBadge', language)}
@@ -187,27 +193,54 @@ export const LoginPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => populateDemoUser('CITIZEN')}
-                className={`p-2.5 rounded-lg border text-left transition cursor-pointer min-h-[44px] ${
+                onClick={() => populateDemoUser('GEETA')}
+                className={`p-2 rounded-lg border text-left transition cursor-pointer min-h-[44px] ${
+                  email === 'geeta.singh@sahaay.demo' && !isRegister
+                    ? 'bg-[#123B5D] text-white border-[#123B5D] shadow-soft'
+                    : 'bg-white border-[#DDE6EC] text-[#243746] hover:bg-slate-50'
+                }`}
+              >
+                <div className="text-xs font-bold">👩‍🌾 Geeta Singh</div>
+                <div className="text-[10px] opacity-80 truncate">Chandanpura #558/3 (13.37 acres)</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => populateDemoUser('RAJESH')}
+                className={`p-2 rounded-lg border text-left transition cursor-pointer min-h-[44px] ${
                   email === 'citizen@sahaay.demo' && !isRegister
                     ? 'bg-[#123B5D] text-white border-[#123B5D] shadow-soft'
                     : 'bg-white border-[#DDE6EC] text-[#243746] hover:bg-slate-50'
                 }`}
               >
-                <div className="text-xs font-bold">{t('demoCitizenTitle', language)}</div>
-                <div className="text-[10px] opacity-80 truncate">{t('demoCitizenSub', language)}</div>
+                <div className="text-xs font-bold">👨‍🌾 Rajesh Sharma</div>
+                <div className="text-[10px] opacity-80 truncate">Rampur #1042 (6.00 acres)</div>
               </button>
+
               <button
                 type="button"
-                onClick={() => populateDemoUser('OFFICER')}
-                className={`p-2.5 rounded-lg border text-left transition cursor-pointer min-h-[44px] ${
-                  email === 'officer@sahaay.demo' && !isRegister
+                onClick={() => populateDemoUser('ANITA')}
+                className={`p-2 rounded-lg border text-left transition cursor-pointer min-h-[44px] ${
+                  email === 'anita.chouhan@sahaay.demo' && !isRegister
                     ? 'bg-[#123B5D] text-white border-[#123B5D] shadow-soft'
                     : 'bg-white border-[#DDE6EC] text-[#243746] hover:bg-slate-50'
                 }`}
               >
-                <div className="text-xs font-bold">{t('demoOfficerTitle', language)}</div>
-                <div className="text-[10px] opacity-80 truncate">{t('demoOfficerSub', language)}</div>
+                <div className="text-xs font-bold">👩‍🌾 Anita Chouhan</div>
+                <div className="text-[10px] opacity-80 truncate">Kolar Kalan #88/1 (7.90 acres)</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => populateDemoUser('OFFICER')}
+                className={`p-2 rounded-lg border text-left transition cursor-pointer min-h-[44px] ${
+                  email === 'officer@sahaay.demo' && !isRegister
+                    ? 'bg-[#0284C7] text-white border-[#0284C7] shadow-soft'
+                    : 'bg-white border-[#DDE6EC] text-[#243746] hover:bg-slate-50'
+                }`}
+              >
+                <div className="text-xs font-bold text-[#0284C7] group-hover:text-white">👮‍♂️ Vikram Chouhan (CALAO)</div>
+                <div className="text-[10px] opacity-80 truncate">Officer Mode (All 13 Bhopal Parcels)</div>
               </button>
             </div>
           </div>
