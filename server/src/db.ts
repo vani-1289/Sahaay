@@ -788,18 +788,18 @@ const inMemoryStore: {
     {
       id: 'comp-1042-01',
       caseId: 'case-1042-01',
-      baseMarketValueINR: 1850000.0,
+      baseMarketValueINR: 1600000.0,
       marketMultiplier: 1.0,
-      marketValueWithMultiplierINR: 1850000.0,
-      landAssessmentINR: 1850000.0,
-      assetAssessmentINR: 120000.0,
-      treesAssetsValueINR: 120000.0,
+      marketValueWithMultiplierINR: 1600000.0,
+      landAssessmentINR: 1600000.0,
+      assetAssessmentINR: 320000.0,
+      treesAssetsValueINR: 320000.0,
       solatiumPercentage: 100.0,
-      solatiumINR: 1850000.0,
-      interestINR: 230000.0,
-      additionalInterestINR: 230000.0,
-      totalCompensationINR: 4250000.0,
-      totalAssessedINR: 4250000.0,
+      solatiumINR: 1600000.0,
+      interestINR: 320000.0,
+      additionalInterestINR: 320000.0,
+      totalCompensationINR: 3840000.0,
+      totalAssessedINR: 3840000.0,
       assessmentStatus: 'ASSESSED',
       paymentStatus: 'PROCESSING',
       dbtStatus: 'PENDING_VERIFICATION',
@@ -1365,12 +1365,37 @@ const mockDb: any = {
       return list.map((d) => ({ ...d }));
     },
     findUnique: async (args: any) => inMemoryStore.documents.find((d) => d.id === args?.where?.id) || inMemoryStore.documents[0] || null,
-    findFirst: async () => inMemoryStore.documents[0] || null,
+    findFirst: async (args: any) => {
+      const id = args?.where?.id;
+      const parcelId = args?.where?.parcelId;
+      const caseId = args?.where?.caseId;
+      return inMemoryStore.documents.find((d) => (id && d.id === id) || (parcelId && d.parcelId === parcelId) || (caseId && d.caseId === caseId)) || inMemoryStore.documents[0] || null;
+    },
     create: async (args: any) => {
       const doc = { id: `doc-${Date.now()}`, ...args.data, createdAt: new Date(), updatedAt: new Date() };
       inMemoryStore.documents.push(doc);
       saveStoreSnapshot();
       return doc;
+    },
+    update: async (args: any) => {
+      const id = args?.where?.id;
+      const doc = inMemoryStore.documents.find((d) => d.id === id);
+      if (doc) {
+        Object.assign(doc, args.data, { updatedAt: new Date() });
+        saveStoreSnapshot();
+        return { ...doc };
+      }
+      return null;
+    },
+    delete: async (args: any) => {
+      const id = args?.where?.id;
+      const idx = inMemoryStore.documents.findIndex((d) => d.id === id);
+      if (idx !== -1) {
+        const deleted = inMemoryStore.documents.splice(idx, 1)[0];
+        saveStoreSnapshot();
+        return deleted;
+      }
+      return null;
     },
     count: async (args: any) => {
       if (args?.where?.verificationStatus) {
@@ -1386,11 +1411,30 @@ const mockDb: any = {
         .filter((n) => !userId || n.userId === userId)
         .map((n) => ({ ...n }));
     },
+    findFirst: async (args: any) => {
+      const id = args?.where?.id;
+      const userId = args?.where?.userId;
+      return inMemoryStore.notifications.find((n) => (id && n.id === id) || (!userId || n.userId === userId)) || null;
+    },
+    findUnique: async (args: any) => {
+      const id = args?.where?.id;
+      return inMemoryStore.notifications.find((n) => n.id === id) || null;
+    },
     create: async (args: any) => {
       const notif = { id: `notif-${Date.now()}`, ...args.data, createdAt: new Date() };
       inMemoryStore.notifications.unshift(notif);
       saveStoreSnapshot();
       return notif;
+    },
+    update: async (args: any) => {
+      const id = args?.where?.id;
+      const notif = inMemoryStore.notifications.find((n) => n.id === id);
+      if (notif) {
+        Object.assign(notif, args.data);
+        saveStoreSnapshot();
+        return { ...notif };
+      }
+      return null;
     },
     count: async (args: any) => {
       const userId = args?.where?.userId;
@@ -1415,6 +1459,16 @@ const mockDb: any = {
       });
     },
     findFirst: async () => inMemoryStore.actions[0] || null,
+    findUnique: async (args: any) => {
+      const id = args?.where?.id;
+      return inMemoryStore.actions.find((x) => x.id === id) || inMemoryStore.actions[0] || null;
+    },
+    create: async (args: any) => {
+      const act = { id: `act-${Date.now()}`, ...args.data, createdAt: new Date(), updatedAt: new Date() };
+      inMemoryStore.actions.push(act);
+      saveStoreSnapshot();
+      return act;
+    },
     update: async (args: any) => {
       const id = args?.where?.id;
       const a = inMemoryStore.actions.find((x) => x.id === id);
@@ -1425,6 +1479,7 @@ const mockDb: any = {
       }
       return inMemoryStore.actions[0];
     },
+    count: async () => inMemoryStore.actions.length,
   },
   grievance: {
     findMany: async (args: any) => {
@@ -1433,8 +1488,16 @@ const mockDb: any = {
         .filter((g) => !userId || g.citizenId === userId)
         .map((g) => populateGrievance(g));
     },
-    findFirst: async () => {
-      const g = inMemoryStore.grievances[0] || null;
+    findFirst: async (args?: any) => {
+      const id = args?.where?.id;
+      const ref = args?.where?.referenceNumber;
+      const g = inMemoryStore.grievances.find((x) => (id && x.id === id) || (ref && x.referenceNumber === ref)) || inMemoryStore.grievances[0] || null;
+      return g ? populateGrievance(g) : null;
+    },
+    findUnique: async (args: any) => {
+      const id = args?.where?.id;
+      const ref = args?.where?.referenceNumber;
+      const g = inMemoryStore.grievances.find((x) => (id && x.id === id) || (ref && x.referenceNumber === ref));
       return g ? populateGrievance(g) : null;
     },
     create: async (args: any) => {
@@ -1450,6 +1513,27 @@ const mockDb: any = {
       inMemoryStore.grievances.unshift(g);
       saveStoreSnapshot();
       return populateGrievance(g);
+    },
+    update: async (args: any) => {
+      const id = args?.where?.id;
+      const ref = args?.where?.referenceNumber;
+      const g = inMemoryStore.grievances.find((x) => (id && x.id === id) || (ref && x.referenceNumber === ref));
+      if (g) {
+        Object.assign(g, args.data, { updatedAt: new Date() });
+        saveStoreSnapshot();
+        return populateGrievance(g);
+      }
+      return inMemoryStore.grievances[0] ? populateGrievance(inMemoryStore.grievances[0]) : null;
+    },
+    delete: async (args: any) => {
+      const id = args?.where?.id;
+      const idx = inMemoryStore.grievances.findIndex((x) => x.id === id);
+      if (idx !== -1) {
+        const deleted = inMemoryStore.grievances.splice(idx, 1)[0];
+        saveStoreSnapshot();
+        return populateGrievance(deleted);
+      }
+      return null;
     },
     count: async (args: any) => {
       if (args?.where?.status) {
@@ -1470,8 +1554,26 @@ const mockDb: any = {
     findMany: async () => inMemoryStore.compensations.map((c) => ({ ...c })),
     findUnique: async (args: any) => {
       const caseId = args?.where?.caseId;
-      const comp = inMemoryStore.compensations.find((c) => !caseId || c.caseId === caseId) || inMemoryStore.compensations[0];
+      const id = args?.where?.id;
+      const comp = inMemoryStore.compensations.find((c) => (caseId && c.caseId === caseId) || (id && c.id === id)) || inMemoryStore.compensations[0];
       return comp ? { ...comp } : null;
+    },
+    update: async (args: any) => {
+      const caseId = args?.where?.caseId;
+      const id = args?.where?.id;
+      const comp = inMemoryStore.compensations.find((c) => (caseId && c.caseId === caseId) || (id && c.id === id));
+      if (comp) {
+        Object.assign(comp, args.data, { updatedAt: new Date() });
+        saveStoreSnapshot();
+        return { ...comp };
+      }
+      return null;
+    },
+    create: async (args: any) => {
+      const comp = { id: `comp-${Date.now()}`, ...args.data, createdAt: new Date(), updatedAt: new Date() };
+      inMemoryStore.compensations.push(comp);
+      saveStoreSnapshot();
+      return { ...comp };
     },
   },
   rRRecord: {
@@ -1485,6 +1587,16 @@ const mockDb: any = {
       const caseId = args?.where?.caseId;
       const rr = inMemoryStore.rrRecords.find((r) => !caseId || r.caseId === caseId) || inMemoryStore.rrRecords[0];
       return rr ? { ...rr } : null;
+    },
+    update: async (args: any) => {
+      const caseId = args?.where?.caseId;
+      const rr = inMemoryStore.rrRecords.find((r) => !caseId || r.caseId === caseId);
+      if (rr) {
+        Object.assign(rr, args.data, { updatedAt: new Date() });
+        saveStoreSnapshot();
+        return { ...rr };
+      }
+      return null;
     },
   },
   acquisitionEvent: {
@@ -1615,21 +1727,39 @@ export const prisma: PrismaClient = new Proxy(rawPrisma as any, {
     return new Proxy(realModel, {
       get(modelTarget: any, methodName: string) {
         return async (...args: any[]) => {
-          if (!isPostgresAvailable && fallbackModel && typeof fallbackModel[methodName] === 'function') {
-            return fallbackModel[methodName](...args);
+          if (!isPostgresAvailable) {
+            if (fallbackModel && typeof fallbackModel[methodName] === 'function') {
+              return fallbackModel[methodName](...args);
+            }
+            if (fallbackModel) {
+              if (methodName === 'findMany') return [];
+              if (methodName === 'findFirst' || methodName === 'findUnique') return null;
+              if (methodName === 'count') return 0;
+              if (methodName === 'create') return { id: `mock-${Date.now()}`, ...args[0]?.data, createdAt: new Date() };
+              if (methodName === 'update') return { id: args[0]?.where?.id || `mock-${Date.now()}`, ...args[0]?.data, updatedAt: new Date() };
+              if (methodName === 'delete' || methodName === 'deleteMany') return { count: 0 };
+              if (methodName === 'updateMany') return { count: 0 };
+            }
           }
 
           try {
             return await modelTarget[methodName](...args);
           } catch (err: any) {
-            if (isConnectionError(err) && fallbackModel && typeof fallbackModel[methodName] === 'function') {
+            if (isConnectionError(err)) {
               if (isPostgresAvailable) {
                 isPostgresAvailable = false;
                 console.warn(
                   '⚠️ PostgreSQL is not reachable locally. Seamlessly operating with integrated SAHAAY demo database.'
                 );
               }
-              return fallbackModel[methodName](...args);
+              if (fallbackModel && typeof fallbackModel[methodName] === 'function') {
+                return fallbackModel[methodName](...args);
+              }
+              if (methodName === 'findMany') return [];
+              if (methodName === 'findFirst' || methodName === 'findUnique') return null;
+              if (methodName === 'count') return 0;
+              if (methodName === 'create') return { id: `mock-${Date.now()}`, ...args[0]?.data, createdAt: new Date() };
+              if (methodName === 'update') return { id: args[0]?.where?.id || `mock-${Date.now()}`, ...args[0]?.data, updatedAt: new Date() };
             }
             throw err;
           }
