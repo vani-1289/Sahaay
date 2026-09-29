@@ -10,6 +10,8 @@ export async function searchParcels(req: Request, res: Response, next: NextFunct
     const district = ((req.query.district as string) || '').trim();
     const scopeAll = req.query.all === 'true';
 
+    const whereClause: any = {};
+
     const andConditions: any[] = [];
 
     // Strict role-based scoping:
