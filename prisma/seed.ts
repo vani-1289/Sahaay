@@ -52,6 +52,106 @@ async function main() {
     include: { profile: true },
   });
 
+  const citizenGeeta = await prisma.user.create({
+    data: {
+      email: 'geeta.singh@sahaay.demo',
+      passwordHash,
+      name: 'Geeta Singh',
+      role: 'CITIZEN',
+      phone: '+91 94250 88712',
+      profile: {
+        create: {
+          aadhaarMasked: 'XXXX-XXXX-4512',
+          panNumber: 'BKLPS9821F',
+          panStatus: 'VERIFIED',
+          faceMatchScore: 94.2,
+          faceMatchStatus: 'VERIFIED',
+          village: 'Chandanpura',
+          tehsil: 'Huzur',
+          district: 'Bhopal',
+          state: 'Madhya Pradesh',
+          preferredLanguage: 'hi',
+        },
+      },
+    },
+    include: { profile: true },
+  });
+
+  const citizenAnita = await prisma.user.create({
+    data: {
+      email: 'anita.chouhan@sahaay.demo',
+      passwordHash,
+      name: 'Anita Chouhan',
+      role: 'CITIZEN',
+      phone: '+91 98270 45612',
+      profile: {
+        create: {
+          aadhaarMasked: 'XXXX-XXXX-7734',
+          panNumber: 'CYZPC4412M',
+          panStatus: 'VERIFIED',
+          faceMatchScore: 97.1,
+          faceMatchStatus: 'VERIFIED',
+          village: 'Kolar Kalan',
+          tehsil: 'Huzur',
+          district: 'Bhopal',
+          state: 'Madhya Pradesh',
+          preferredLanguage: 'en',
+        },
+      },
+    },
+    include: { profile: true },
+  });
+
+  const citizenDigvijay = await prisma.user.create({
+    data: {
+      email: 'digvijay.patel@sahaay.demo',
+      passwordHash,
+      name: 'Digvijay Singh Patel',
+      role: 'CITIZEN',
+      phone: '+91 97520 63489',
+      profile: {
+        create: {
+          aadhaarMasked: 'XXXX-XXXX-6190',
+          panNumber: 'DJSPP5590K',
+          panStatus: 'VERIFIED',
+          faceMatchScore: 95.8,
+          faceMatchStatus: 'VERIFIED',
+          village: 'Misrod',
+          tehsil: 'Huzur',
+          district: 'Bhopal',
+          state: 'Madhya Pradesh',
+          preferredLanguage: 'hi',
+        },
+      },
+    },
+    include: { profile: true },
+  });
+
+  const citizenRamesh = await prisma.user.create({
+    data: {
+      email: 'ramesh.yadav@sahaay.demo',
+      passwordHash,
+      name: 'Ramesh Yadav',
+      role: 'CITIZEN',
+      phone: '+91 98263 71829',
+      profile: {
+        create: {
+          aadhaarMasked: 'XXXX-XXXX-3341',
+          panNumber: 'RYDPY1122N',
+          panStatus: 'VERIFIED',
+          faceMatchScore: 93.4,
+          faceMatchStatus: 'VERIFIED',
+          village: 'Sukhi Sewaniya',
+          tehsil: 'Huzur',
+          district: 'Bhopal',
+          state: 'Madhya Pradesh',
+          preferredLanguage: 'hi',
+        },
+      },
+    },
+    include: { profile: true },
+  });
+
   const officer = await prisma.user.create({
     data: {
       email: 'officer@sahaay.demo',
@@ -106,6 +206,7 @@ async function main() {
   // 3. Create Land Parcels
   const parcel1042 = await prisma.parcel.create({
     data: {
+      ownerId: citizen.id,
       surveyNumber: '1042',
       khasraNumber: '1042/1',
       village: 'Rampur',
@@ -134,6 +235,7 @@ async function main() {
 
   const parcel1043 = await prisma.parcel.create({
     data: {
+      ownerId: citizen.id,
       surveyNumber: '1043',
       khasraNumber: '1043/2',
       village: 'Rampur',
@@ -150,6 +252,7 @@ async function main() {
 
   const parcel1044 = await prisma.parcel.create({
     data: {
+      ownerId: citizen.id,
       surveyNumber: '1044',
       khasraNumber: '1044/1',
       village: 'Rampur',
@@ -161,6 +264,74 @@ async function main() {
       currentStatus: 'Notification Issued',
       centroidLat: 23.2584,
       centroidLng: 77.4115,
+    },
+  });
+
+  const parcelGeeta = await prisma.parcel.create({
+    data: {
+      ownerId: citizenGeeta.id,
+      surveyNumber: '558/3',
+      khasraNumber: '558/3',
+      village: 'Chandanpura',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 5.41,
+      landType: 'Forest Buffer',
+      currentStatus: 'Under Acquisition',
+      centroidLat: 23.1850,
+      centroidLng: 77.3820,
+    },
+  });
+
+  const parcelAnita = await prisma.parcel.create({
+    data: {
+      ownerId: citizenAnita.id,
+      surveyNumber: '88/1',
+      khasraNumber: '88/1',
+      village: 'Kolar Kalan',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 3.20,
+      landType: 'Residential Buffer',
+      currentStatus: 'Under Acquisition',
+      centroidLat: 23.1720,
+      centroidLng: 77.4200,
+    },
+  });
+
+  const parcelDigvijay = await prisma.parcel.create({
+    data: {
+      ownerId: citizenDigvijay.id,
+      surveyNumber: '214/2',
+      khasraNumber: '214/2',
+      village: 'Misrod',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 1.65,
+      landType: 'Commercial',
+      currentStatus: 'Compensation Pending',
+      centroidLat: 23.1480,
+      centroidLng: 77.4620,
+    },
+  });
+
+  const parcelRamesh = await prisma.parcel.create({
+    data: {
+      ownerId: citizenRamesh.id,
+      surveyNumber: '340/5',
+      khasraNumber: '340/5',
+      village: 'Sukhi Sewaniya',
+      tehsil: 'Huzur',
+      district: 'Bhopal',
+      state: 'Madhya Pradesh',
+      recordedAreaHa: 4.10,
+      landType: 'Agricultural',
+      currentStatus: 'Survey Complete',
+      centroidLat: 23.3150,
+      centroidLng: 77.4920,
     },
   });
 
@@ -195,6 +366,70 @@ async function main() {
       estimatedCompensationINR: 2850000.0,
       disbursedCompensationINR: 0.0,
       remarks: 'Award declared under Section 23. Disbursement authorization pending bank mandate.',
+    },
+  });
+
+  const caseGeeta = await prisma.acquisitionCase.create({
+    data: {
+      caseReference: 'ACQ-2026-MP-0558',
+      parcelId: parcelGeeta.id,
+      projectId: project.id,
+      citizenId: citizenGeeta.id,
+      stage: 'HEARING',
+      status: 'ACTIVE',
+      notificationSection: 'Section 15(2) Hearing on Objections',
+      noticeDate: new Date('2026-07-15'),
+      estimatedCompensationINR: 6200000.0,
+      disbursedCompensationINR: 0.0,
+      remarks: 'Joint boundary inspection completed. Hearing scheduled for forest buffer valuation.',
+    },
+  });
+
+  const caseAnita = await prisma.acquisitionCase.create({
+    data: {
+      caseReference: 'ACQ-2026-MP-0088',
+      parcelId: parcelAnita.id,
+      projectId: project.id,
+      citizenId: citizenAnita.id,
+      stage: 'NOTIFICATION',
+      status: 'ACTIVE',
+      notificationSection: 'Section 11(1) Preliminary Notification',
+      noticeDate: new Date('2026-08-28'),
+      estimatedCompensationINR: 4950000.0,
+      disbursedCompensationINR: 0.0,
+      remarks: 'Notification published. Awaiting cadastral survey verification.',
+    },
+  });
+
+  const caseDigvijay = await prisma.acquisitionCase.create({
+    data: {
+      caseReference: 'ACQ-2026-MP-0214',
+      parcelId: parcelDigvijay.id,
+      projectId: project.id,
+      citizenId: citizenDigvijay.id,
+      stage: 'COMPENSATION',
+      status: 'ACTIVE',
+      notificationSection: 'Section 23 Compensation Award Determination',
+      noticeDate: new Date('2026-06-10'),
+      estimatedCompensationINR: 7800000.0,
+      disbursedCompensationINR: 3900000.0,
+      remarks: 'First tranche of commercial land compensation disbursed via PFMS.',
+    },
+  });
+
+  const caseRamesh = await prisma.acquisitionCase.create({
+    data: {
+      caseReference: 'ACQ-2026-MP-0340',
+      parcelId: parcelRamesh.id,
+      projectId: project.id,
+      citizenId: citizenRamesh.id,
+      stage: 'SURVEY',
+      status: 'ACTIVE',
+      notificationSection: 'Section 12 Preliminary Survey & Mapping',
+      noticeDate: new Date('2026-09-02'),
+      estimatedCompensationINR: 5120000.0,
+      disbursedCompensationINR: 0.0,
+      remarks: 'Cadastral drone survey completed; geo-referenced map published.',
     },
   });
 
@@ -306,6 +541,37 @@ async function main() {
     },
   });
 
+  await prisma.compensationRecord.create({
+    data: {
+      caseId: caseGeeta.id,
+      landAssessmentINR: 3100000.0,
+      assetAssessmentINR: 0.0,
+      solatiumINR: 3100000.0,
+      interestINR: 0.0,
+      totalAssessedINR: 6200000.0,
+      assessmentStatus: 'PENDING_APPROVAL',
+      paymentStatus: 'UNPAID',
+      assessmentDate: new Date('2026-07-25'),
+    },
+  });
+
+  await prisma.compensationRecord.create({
+    data: {
+      caseId: caseDigvijay.id,
+      landAssessmentINR: 3900000.0,
+      assetAssessmentINR: 0.0,
+      solatiumINR: 3900000.0,
+      interestINR: 0.0,
+      totalAssessedINR: 7800000.0,
+      assessmentStatus: 'ASSESSED',
+      paymentStatus: 'DISBURSED',
+      assessmentDate: new Date('2026-06-25'),
+      pfmsReference: 'PFMS-MP-2026-99214',
+      bankAccountMasked: 'Punjab National Bank A/C ending in 8821',
+      ifscCode: 'PUNB0123400',
+    },
+  });
+
   // 8. Create Rehabilitation & Resettlement (R&R) Record
   await prisma.rRRecord.create({
     data: {
@@ -397,7 +663,11 @@ async function main() {
   });
 
   console.log('✅ Database seeded successfully with demo users:');
-  console.log('   Citizen: citizen@sahaay.demo / password123');
+  console.log('   Citizen 1 (Rajesh Sharma): citizen@sahaay.demo / password123');
+  console.log('   Citizen 2 (Geeta Singh): geeta.singh@sahaay.demo / password123');
+  console.log('   Citizen 3 (Anita Chouhan): anita.chouhan@sahaay.demo / password123');
+  console.log('   Citizen 4 (Digvijay Singh Patel): digvijay.patel@sahaay.demo / password123');
+  console.log('   Citizen 5 (Ramesh Yadav): ramesh.yadav@sahaay.demo / password123');
   console.log('   Officer: officer@sahaay.demo / password123');
   console.log('   Admin:   admin@sahaay.demo / password123');
 }

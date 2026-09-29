@@ -316,6 +316,7 @@ const inMemoryStore: {
   parcels: [
     {
       id: 'parcel-bh-558',
+      ownerId: 'usr-geeta-01',
       surveyNumber: '558/3',
       khasraNumber: '558/3',
       parcelCode: 'MP-BH-031',
@@ -334,6 +335,7 @@ const inMemoryStore: {
     },
     {
       id: 'parcel-1042',
+      ownerId: 'usr-citizen-01',
       surveyNumber: '1042',
       khasraNumber: '1042/1',
       parcelCode: 'MP-BH-1042',
@@ -352,6 +354,7 @@ const inMemoryStore: {
     },
     {
       id: 'parcel-1043',
+      ownerId: 'usr-citizen-01',
       surveyNumber: '1043',
       khasraNumber: '1043/2',
       parcelCode: 'MP-BH-1043',
@@ -370,6 +373,7 @@ const inMemoryStore: {
     },
     {
       id: 'parcel-bh-88',
+      ownerId: 'usr-anita-01',
       surveyNumber: '88/1',
       khasraNumber: '88/1',
       parcelCode: 'MP-BH-088',
@@ -388,6 +392,7 @@ const inMemoryStore: {
     },
     {
       id: 'parcel-bh-214',
+      ownerId: 'usr-digvijay-01',
       surveyNumber: '214/2',
       khasraNumber: '214/2',
       parcelCode: 'MP-BH-214',
@@ -406,6 +411,7 @@ const inMemoryStore: {
     },
     {
       id: 'parcel-bh-340',
+      ownerId: 'usr-ramesh-01',
       surveyNumber: '340/5',
       khasraNumber: '340/5',
       parcelCode: 'MP-BH-340',
@@ -424,6 +430,7 @@ const inMemoryStore: {
     },
     {
       id: 'parcel-bh-142',
+      ownerId: 'usr-manoj-01',
       surveyNumber: '142/3',
       khasraNumber: '142/3',
       parcelCode: 'MP-BH-142',
@@ -442,6 +449,7 @@ const inMemoryStore: {
     },
     {
       id: 'parcel-bh-402',
+      ownerId: 'usr-sunil-01',
       surveyNumber: '402/1',
       khasraNumber: '402/1',
       parcelCode: 'MP-BH-402',
@@ -460,6 +468,7 @@ const inMemoryStore: {
     },
     {
       id: 'parcel-bh-719',
+      ownerId: 'usr-pradeep-01',
       surveyNumber: '719/2',
       khasraNumber: '719/2',
       parcelCode: 'MP-BH-719',
@@ -478,6 +487,7 @@ const inMemoryStore: {
     },
     {
       id: 'parcel-bh-995',
+      ownerId: 'usr-kamlesh-01',
       surveyNumber: '995/4',
       khasraNumber: '995/4',
       parcelCode: 'MP-BH-995',
@@ -496,6 +506,7 @@ const inMemoryStore: {
     },
     {
       id: 'parcel-bh-631',
+      ownerId: 'usr-suresh-01',
       surveyNumber: '631/1',
       khasraNumber: '631/1',
       parcelCode: 'MP-BH-631',
@@ -514,6 +525,7 @@ const inMemoryStore: {
     },
     {
       id: 'parcel-bh-185',
+      ownerId: 'usr-bhupendra-01',
       surveyNumber: '185/2',
       khasraNumber: '185/2',
       parcelCode: 'MP-BH-185',
@@ -532,6 +544,7 @@ const inMemoryStore: {
     },
     {
       id: 'parcel-bh-512',
+      ownerId: 'usr-deepak-01',
       surveyNumber: '512/7',
       khasraNumber: '512/7',
       parcelCode: 'MP-BH-512',
@@ -1227,6 +1240,12 @@ const mockDb: any = {
       }
       return inMemoryStore.cases.length;
     },
+    create: async (args: any) => {
+      const c = { id: args.data?.id || `case-${Date.now()}`, ...args.data, createdAt: new Date(), updatedAt: new Date() };
+      inMemoryStore.cases.push(c);
+      saveStoreSnapshot();
+      return populateCase(c, args?.include);
+    },
     update: async (args: any) => {
       const id = args?.where?.id;
       const c = inMemoryStore.cases.find((x) => x.id === id);
@@ -1277,56 +1296,15 @@ const mockDb: any = {
     findMany: async (args: any) => {
       let list = inMemoryStore.parcels;
       if (args?.where) {
-        const w = args.where;
-        list = list.filter((p) => {
-          if (w.id?.in && Array.isArray(w.id.in)) {
-            if (!w.id.in.includes(p.id)) return false;
-          }
-          if (w.cases?.some?.citizenId) {
-            const pCases = inMemoryStore.cases.filter((c) => c.parcelId === p.id);
-            if (!pCases.some((c) => c.citizenId === w.cases.some.citizenId)) return false;
-          }
-          if (w.surveyNumber?.contains) {
-            const term = w.surveyNumber.contains.toLowerCase().trim();
-            const matchSurvey = p.surveyNumber.toLowerCase().includes(term);
-            const matchKhasra = p.khasraNumber && p.khasraNumber.toLowerCase().includes(term);
-            const matchId = p.id.toLowerCase().includes(term);
-            const matchCode = p.parcelCode && p.parcelCode.toLowerCase().includes(term);
-            if (!matchSurvey && !matchKhasra && !matchId && !matchCode) return false;
-          }
-          if (w.village?.contains) {
-            const term = w.village.contains.toLowerCase().trim();
-            if (!p.village.toLowerCase().includes(term)) return false;
-          }
-          if (w.district?.contains) {
-            const term = w.district.contains.toLowerCase().trim();
-            if (!p.district.toLowerCase().includes(term)) return false;
-          }
-          if (w.OR && Array.isArray(w.OR)) {
-            const matchesOr = w.OR.some((cond: any) => {
-              if (cond.surveyNumber?.contains && p.surveyNumber.toLowerCase().includes(cond.surveyNumber.contains.toLowerCase())) return true;
-              if (cond.khasraNumber?.contains && p.khasraNumber && p.khasraNumber.toLowerCase().includes(cond.khasraNumber.contains.toLowerCase())) return true;
-              if (cond.village?.contains && p.village.toLowerCase().includes(cond.village.contains.toLowerCase())) return true;
-              if (cond.district?.contains && p.district.toLowerCase().includes(cond.district.contains.toLowerCase())) return true;
-              if (cond.cases?.some?.OR) {
-                const pCases = inMemoryStore.cases.filter((c) => c.parcelId === p.id);
-                return pCases.some((c) => {
-                  const proj = inMemoryStore.projects.find((pr) => pr.id === c.projectId);
-                  return cond.cases.some.OR.some((subCond: any) => {
-                    if (subCond.caseReference?.contains && c.caseReference.toLowerCase().includes(subCond.caseReference.contains.toLowerCase())) return true;
-                    if (subCond.project?.name?.contains && proj && proj.name.toLowerCase().includes(subCond.project.name.contains.toLowerCase())) return true;
-                    return false;
-                  });
-                });
-              }
-              return false;
-            });
-            if (!matchesOr) return false;
-          }
-          return true;
-        });
+        list = list.filter((p) => matchesParcelFilter(p, args.where));
       }
       return list.map((p) => populateParcel(p, args?.include));
+    },
+    create: async (args: any) => {
+      const p = { id: args.data?.id || `parcel-${Date.now()}`, ...args.data, createdAt: new Date(), updatedAt: new Date() };
+      inMemoryStore.parcels.push(p);
+      saveStoreSnapshot();
+      return populateParcel(p, args?.include);
     },
     count: async () => inMemoryStore.parcels.length,
     update: async (args: any) => {
@@ -1628,8 +1606,74 @@ function populateGrievance(g: any) {
   };
 }
 
+function matchesParcelFilter(p: any, w: any): boolean {
+  if (!w) return true;
+  if (w.AND && Array.isArray(w.AND)) {
+    return w.AND.every((sub: any) => matchesParcelFilter(p, sub));
+  }
+  if (w.ownerId && p.ownerId !== w.ownerId) {
+    return false;
+  }
+  if (w.id?.in && Array.isArray(w.id.in)) {
+    if (!w.id.in.includes(p.id)) return false;
+  }
+  if (w.cases?.some?.citizenId) {
+    const pCases = inMemoryStore.cases.filter((c) => c.parcelId === p.id);
+    if (!pCases.some((c) => c.citizenId === w.cases.some.citizenId)) return false;
+  }
+  if (w.surveyNumber?.contains) {
+    const term = w.surveyNumber.contains.toLowerCase().trim();
+    const matchSurvey = p.surveyNumber.toLowerCase().includes(term);
+    const matchKhasra = p.khasraNumber && p.khasraNumber.toLowerCase().includes(term);
+    const matchId = p.id.toLowerCase().includes(term);
+    const matchCode = p.parcelCode && p.parcelCode.toLowerCase().includes(term);
+    if (!matchSurvey && !matchKhasra && !matchId && !matchCode) return false;
+  }
+  if (w.village?.contains) {
+    const term = w.village.contains.toLowerCase().trim();
+    if (!p.village.toLowerCase().includes(term)) return false;
+  }
+  if (w.district?.contains) {
+    const term = w.district.contains.toLowerCase().trim();
+    if (!p.district.toLowerCase().includes(term)) return false;
+  }
+  if (w.OR && Array.isArray(w.OR)) {
+    const matchesOr = w.OR.some((cond: any) => {
+      if (cond.ownerId && p.ownerId === cond.ownerId) return true;
+      if (cond.cases?.some?.citizenId) {
+        const pCases = inMemoryStore.cases.filter((c) => c.parcelId === p.id);
+        if (pCases.some((c) => c.citizenId === cond.cases.some.citizenId)) return true;
+      }
+      if (cond.surveyNumber?.contains && p.surveyNumber.toLowerCase().includes(cond.surveyNumber.contains.toLowerCase())) return true;
+      if (cond.khasraNumber?.contains && p.khasraNumber && p.khasraNumber.toLowerCase().includes(cond.khasraNumber.contains.toLowerCase())) return true;
+      if (cond.village?.contains && p.village.toLowerCase().includes(cond.village.contains.toLowerCase())) return true;
+      if (cond.district?.contains && p.district.toLowerCase().includes(cond.district.contains.toLowerCase())) return true;
+      if (cond.cases?.some?.OR) {
+        const pCases = inMemoryStore.cases.filter((c) => c.parcelId === p.id);
+        return pCases.some((c) => {
+          const proj = inMemoryStore.projects.find((pr) => pr.id === c.projectId);
+          return cond.cases.some.OR.some((subCond: any) => {
+            if (subCond.caseReference?.contains && c.caseReference.toLowerCase().includes(subCond.caseReference.contains.toLowerCase())) return true;
+            if (subCond.project?.name?.contains && proj && proj.name.toLowerCase().includes(subCond.project.name.contains.toLowerCase())) return true;
+            return false;
+          });
+        });
+      }
+      return false;
+    });
+    if (!matchesOr) return false;
+  }
+  return true;
+}
+
 function populateParcel(p: any, include?: any) {
   const res = { ...p };
+  const owner = inMemoryStore.users.find((u) => u.id === p.ownerId);
+  if (owner) {
+    res.owner = { id: owner.id, name: owner.name, email: owner.email, phone: owner.phone };
+  } else {
+    res.owner = null;
+  }
   const matchedCases = inMemoryStore.cases
     .filter((c) => c.parcelId === p.id)
     .map((c) => {

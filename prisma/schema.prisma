@@ -28,6 +28,7 @@ model User {
   department    String? // for officers
   profile       CitizenProfile?
   cases         AcquisitionCase[] @relation("CitizenCases")
+  parcels       Parcel[]          @relation("UserParcels")
   documents     Document[]        @relation("UploadedDocuments")
   grievances    Grievance[]       @relation("CitizenGrievances")
   notifications Notification[]
@@ -86,6 +87,8 @@ model Project {
 
 model Parcel {
   id              String            @id @default(cuid())
+  ownerId         String?
+  owner           User?             @relation("UserParcels", fields: [ownerId], references: [id], onDelete: SetNull)
   surveyNumber    String // e.g. "1042"
   khasraNumber    String? // e.g. "1042/1"
   village         String // e.g. "Rampur"
@@ -104,6 +107,7 @@ model Parcel {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
+  @@index([ownerId])
   @@index([surveyNumber])
   @@index([village])
   @@index([district])

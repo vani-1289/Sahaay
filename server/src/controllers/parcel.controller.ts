@@ -12,51 +12,70 @@ export async function searchParcels(req: Request, res: Response, next: NextFunct
 
     const whereClause: any = {};
 
+    const andConditions: any[] = [];
+
     // Strict role-based scoping:
     // If authenticated user is CITIZEN (land owner), restrict view to only their own registered parcel(s)
     const isCitizen = req.user && req.user.role === 'CITIZEN';
     const isOfficer = req.user && (req.user.role === 'OFFICER' || req.user.role === 'ADMIN');
 
     if (isCitizen && !scopeAll) {
-      whereClause.cases = {
-        some: {
-          citizenId: req.user!.userId,
-        },
-      };
+      andConditions.push({
+        OR: [
+          { ownerId: req.user!.userId },
+          {
+            cases: {
+              some: {
+                citizenId: req.user!.userId,
+              },
+            },
+          },
+        ],
+      });
     }
 
     if (survey) {
-      whereClause.surveyNumber = { contains: survey };
+      andConditions.push({
+        OR: [
+          { surveyNumber: { contains: survey } },
+          { khasraNumber: { contains: survey } },
+        ],
+      });
     }
     if (village) {
-      whereClause.village = { contains: village };
+      andConditions.push({ village: { contains: village } });
     }
     if (district) {
-      whereClause.district = { contains: district };
+      andConditions.push({ district: { contains: district } });
     }
 
     if (q) {
-      whereClause.OR = [
-        { surveyNumber: { contains: q } },
-        { khasraNumber: { contains: q } },
-        { village: { contains: q } },
-        { district: { contains: q } },
-        {
-          cases: {
-            some: {
-              OR: [
-                { caseReference: { contains: q } },
-                { project: { name: { contains: q } } },
-              ],
+      andConditions.push({
+        OR: [
+          { surveyNumber: { contains: q } },
+          { khasraNumber: { contains: q } },
+          { village: { contains: q } },
+          { district: { contains: q } },
+          {
+            cases: {
+              some: {
+                OR: [
+                  { caseReference: { contains: q } },
+                  { project: { name: { contains: q } } },
+                ],
+              },
             },
           },
-        },
-      ];
+        ],
+      });
     }
+
+    const whereClause: any = andConditions.length > 0 ? { AND: andConditions } : {};
 
     const parcels = await prisma.parcel.findMany({
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       include: {
+        owner: { select: { id: true, name: true, email: true, phone: true } },
         cases: {
           include: {
             project: true,
@@ -91,6 +110,7 @@ export async function getParcelById(req: Request, res: Response, next: NextFunct
         ],
       },
       include: {
+        owner: { select: { id: true, name: true, email: true, phone: true } },
         cases: {
           include: {
             project: true,
@@ -110,7 +130,9 @@ export async function getParcelById(req: Request, res: Response, next: NextFunct
 
     // Role-based protection: Citizens can only inspect their own parcels
     if (req.user && req.user.role === 'CITIZEN') {
-      const isOwner = parcel.cases.some((c: any) => c.citizen?.id === req.user!.userId || c.citizenId === req.user!.userId);
+      const isOwner =
+        parcel.ownerId === req.user!.userId ||
+        parcel.cases.some((c: any) => c.citizen?.id === req.user!.userId || c.citizenId === req.user!.userId);
       if (!isOwner) {
         throw new ForbiddenError(
           'Access Restricted: As a registered land owner, you are only authorized to view details of your own land parcel. Officer authorization is required to access other records.',

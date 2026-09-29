@@ -134,6 +134,50 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       },
     });
 
+    // Auto-provision registered land parcel & acquisition case for citizen accounts
+    if (user.role === 'CITIZEN') {
+      try {
+        const surveyNum = String(Math.floor(1100 + Math.random() * 8800));
+        const defaultProject = await prisma.project.findFirst();
+        if (defaultProject) {
+          const registeredParcel = await prisma.parcel.create({
+            data: {
+              ownerId: user.id,
+              surveyNumber: surveyNum,
+              khasraNumber: `${surveyNum}/1`,
+              village: data.village || 'Rampur',
+              tehsil: 'Huzur',
+              district: data.district || 'Bhopal',
+              state: 'Madhya Pradesh',
+              recordedAreaHa: 2.15,
+              landType: 'Agricultural',
+              currentStatus: 'Under Verification',
+              centroidLat: 23.2500 + (Math.random() - 0.5) * 0.04,
+              centroidLng: 77.4150 + (Math.random() - 0.5) * 0.04,
+            },
+          });
+
+          await prisma.acquisitionCase.create({
+            data: {
+              caseReference: `ACQ-2026-MP-${surveyNum}`,
+              parcelId: registeredParcel.id,
+              projectId: defaultProject.id,
+              citizenId: user.id,
+              stage: 'VERIFICATION',
+              status: 'ACTIVE',
+              notificationSection: 'Section 11(1) of RFCTLARR Act, 2013',
+              noticeDate: new Date(),
+              estimatedCompensationINR: 3200000.0,
+              disbursedCompensationINR: 0.0,
+              remarks: 'Initial registered cadastral record created during citizen portal onboarding.',
+            },
+          });
+        }
+      } catch (parcelErr) {
+        logger.warn('Could not auto-provision initial parcel for registered citizen:', parcelErr);
+      }
+    }
+
     const token = generateToken({
       userId: user.id,
       email: user.email,
