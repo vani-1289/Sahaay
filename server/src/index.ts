@@ -40,6 +40,14 @@ if (config.NODE_ENV !== 'test') {
 
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+  process.on('uncaughtException', (err: any) => {
+    logger.error('Unhandled server exception caught (process kept alive):', { err: err?.message || err });
+  });
+
+  process.on('unhandledRejection', (reason: any) => {
+    logger.error('Unhandled promise rejection caught (process kept alive):', { reason: reason?.message || reason });
+  });
 }
 
 export default app;

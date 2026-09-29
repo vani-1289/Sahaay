@@ -13,7 +13,7 @@ export const apiLimiter = rateLimit({
       code: 'RATE_LIMIT_EXCEEDED',
     },
   },
-  skip: () => config.NODE_ENV === 'test', // Skip in automated test runs
+  skip: () => config.NODE_ENV === 'test' || config.NODE_ENV === 'development', // Skip in automated test runs and local dev
 });
 
 export const authLimiter = rateLimit({
@@ -28,7 +28,7 @@ export const authLimiter = rateLimit({
       code: 'AUTH_RATE_LIMIT_EXCEEDED',
     },
   },
-  skip: () => config.NODE_ENV === 'test',
+  skip: () => config.NODE_ENV === 'test' || config.NODE_ENV === 'development',
 });
 
 export const uploadLimiter = rateLimit({
@@ -43,5 +43,5 @@ export const uploadLimiter = rateLimit({
       code: 'UPLOAD_RATE_LIMIT_EXCEEDED',
     },
   },
-  skip: () => config.NODE_ENV === 'test',
+  skip: () => config.NODE_ENV === 'test' || config.NODE_ENV === 'development',
 });

@@ -268,17 +268,17 @@ export const CaseDetailPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#DDE6EC] space-y-1">
               <span className="text-[#667784] text-[11px] block uppercase font-semibold">{t('baseMarketValueLabel', language)}:</span>
-              <span className="text-base font-bold text-[#123B5D] font-mono">₹{comp.baseLandValueINR?.toLocaleString('en-IN')}</span>
+              <span className="text-base font-bold text-[#123B5D] font-mono">₹{(comp.baseLandValueINR ?? comp.baseMarketValueINR ?? comp.marketValueWithMultiplierINR ?? 0).toLocaleString('en-IN')}</span>
               <span className="text-[10px] text-[#667784] block">{t('multiplierFactorLabel', language)}</span>
             </div>
             <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#DDE6EC] space-y-1">
               <span className="text-[#667784] text-[11px] block uppercase font-semibold">{t('solatium100Label', language)}:</span>
-              <span className="text-base font-bold text-[#2E7D5B] font-mono">+₹{comp.solatiumINR?.toLocaleString('en-IN')}</span>
+              <span className="text-base font-bold text-[#2E7D5B] font-mono">+₹{(comp.solatiumINR ?? 0).toLocaleString('en-IN')}</span>
               <span className="text-[10px] text-[#667784] block">{t('solatium100Sub', language)}</span>
             </div>
             <div className="p-4 rounded-xl bg-[#E8F4EC] border border-[#2E7D5B]/30 space-y-1">
               <span className="text-[#2E7D5B] text-[11px] block uppercase font-bold">{t('totalCompensation', language)}:</span>
-              <span className="text-lg font-extrabold text-[#2E7D5B] font-mono">₹{comp.totalAmountINR?.toLocaleString('en-IN')}</span>
+              <span className="text-lg font-extrabold text-[#2E7D5B] font-mono">₹{(comp.totalAmountINR ?? comp.totalCompensationINR ?? comp.totalAssessedINR ?? 0).toLocaleString('en-IN')}</span>
               <span className="text-[10px] text-[#2E7D5B] block">{t('dbtPfmsSub', language)}</span>
             </div>
           </div>

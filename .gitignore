@@ -30,6 +30,7 @@ storage/documents/*
 !storage/documents/.gitkeep
 server/storage/documents/*
 !server/storage/documents/.gitkeep
+storage/*.json
 uploads/*
 !uploads/.gitkeep
 

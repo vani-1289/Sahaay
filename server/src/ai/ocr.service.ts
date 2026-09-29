@@ -12,8 +12,8 @@ export class OcrAIService implements IAIService {
 
     let rawText = '';
 
-    // If a physical file exists on disk and is an image or scan, run Tesseract OCR
-    if (filePath && fs.existsSync(filePath) && (mimeType.startsWith('image/') || mimeType.includes('pdf'))) {
+    // If a physical file exists on disk and is an image (PNG, JPG, BMP, WEBP, TIFF), run Tesseract OCR
+    if (filePath && fs.existsSync(filePath) && mimeType.startsWith('image/')) {
       try {
         const worker = await createWorker('eng');
         const ret = await worker.recognize(filePath);
