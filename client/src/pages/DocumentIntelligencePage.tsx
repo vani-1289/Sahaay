@@ -62,6 +62,7 @@ export const DocumentIntelligencePage: React.FC = () => {
     setError('');
     setAnalyzing(true);
     setAnalysisResult(null);
+    setLiveExplanation('');
 
     const formData = new FormData();
     formData.append('file', selectedFile);
@@ -71,6 +72,9 @@ export const DocumentIntelligencePage: React.FC = () => {
       const res = await api.uploadDocument(formData);
       if (res.success) {
         setAnalysisResult(res.data);
+        if (selectedLanguage !== 'en') {
+          handleLanguageStream(selectedLanguage, res.data.extractedData);
+        }
       }
     } catch (err: any) {
       setError(err.message || t('status_REJECTED', language));
@@ -85,11 +89,11 @@ export const DocumentIntelligencePage: React.FC = () => {
     handleFileUpload(mockFile);
   };
 
-  const handleLanguageStream = async (newLang: string) => {
+  const handleLanguageStream = async (newLang: string, overrideExtracted?: any) => {
     setSelectedLanguage(newLang);
-    const rawText = analysisResult?.extractedData?.rawText || '';
-    const docType = analysisResult?.extractedData?.documentType || 'ACQUISITION_NOTICE';
-    if (!rawText) return;
+    const ext = overrideExtracted || analysisResult?.extractedData;
+    const rawText = ext?.rawText || ext?.plainLanguageExplanation || `Statutory Notice for Survey #${ext?.surveyNumber || ''} in Village ${ext?.village || ''}`;
+    const docType = ext?.documentType || 'ACQUISITION_NOTICE';
 
     setIsStreaming(true);
     setLiveExplanation('');
@@ -102,6 +106,14 @@ export const DocumentIntelligencePage: React.FC = () => {
       );
     } catch (err: any) {
       console.warn('Streaming explanation fallback:', err);
+      try {
+        const directRes = await api.explainDocument({ rawText, docType, language: newLang });
+        if (directRes?.data?.explanation) {
+          setLiveExplanation(directRes.data.explanation);
+        }
+      } catch (directErr) {
+        console.error('Direct explanation failed:', directErr);
+      }
     } finally {
       setIsStreaming(false);
     }
@@ -362,9 +374,16 @@ export const DocumentIntelligencePage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#DDE6EC] text-xs text-[#243746] leading-relaxed whitespace-pre-line font-normal relative">
-              {liveExplanation || extracted.plainLanguageExplanation}
-              {isStreaming && (
+            <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#DDE6EC] text-xs text-[#243746] leading-relaxed whitespace-pre-line font-normal relative min-h-[90px]">
+              {isStreaming && !liveExplanation ? (
+                <div className="flex items-center gap-2 text-[#667784] italic">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#123B5D]" />
+                  <span>Translating & generating statutory advice in native script...</span>
+                </div>
+              ) : (
+                liveExplanation || extracted.plainLanguageExplanation
+              )}
+              {isStreaming && liveExplanation && (
                 <span className="inline-block w-2 h-3.5 ml-1 bg-[#123B5D] animate-pulse align-middle" />
               )}
             </div>

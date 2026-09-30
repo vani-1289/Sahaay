@@ -112,7 +112,7 @@ export class OpenAIService implements IAIService {
           model: NVIDIA_NIM_MODEL,
           temperature: 0.3,
           top_p: 0.95,
-          max_tokens: 6000,
+          max_tokens: 2048,
           stream: true,
           messages: [
             { role: 'system', content: SAHAAY_SYSTEM_PROMPT },
