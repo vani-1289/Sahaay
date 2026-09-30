@@ -73,11 +73,29 @@ export async function searchParcels(req: Request, res: Response, next: NextFunct
     const parcels = await prisma.parcel.findMany({
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       include: {
-        owner: { select: { id: true, name: true, email: true, phone: true } },
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            role: true,
+            profile: true,
+          },
+        },
         cases: {
           include: {
             project: true,
-            citizen: { select: { id: true, name: true, email: true, phone: true } },
+            citizen: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                role: true,
+                profile: true,
+              },
+            },
           },
         },
       },
@@ -108,13 +126,31 @@ export async function getParcelById(req: Request, res: Response, next: NextFunct
         ],
       },
       include: {
-        owner: { select: { id: true, name: true, email: true, phone: true } },
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            role: true,
+            profile: true,
+          },
+        },
         cases: {
           include: {
             project: true,
             compensationRecord: true,
             rrRecord: true,
-            citizen: { select: { id: true, name: true, email: true, phone: true } },
+            citizen: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                role: true,
+                profile: true,
+              },
+            },
           },
         },
         documents: true,

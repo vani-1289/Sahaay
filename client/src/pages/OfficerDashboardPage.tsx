@@ -329,9 +329,17 @@ export const OfficerDashboardPage: React.FC = () => {
                 <p className="text-[#667784] mt-0.5">
                   {t('surveyParcelLabel', language)} #{c.parcel?.surveyNumber} • {c.parcel?.village} ({c.parcel?.recordedAreaHa} ha)
                 </p>
-                <span className="text-[11px] text-[#667784] block mt-1">
-                  {t('citizenPortal', language)}: <strong>{c.citizen?.name}</strong>
-                </span>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-[#667784]">
+                  <span>{t('citizenPortal', language)}: <strong className="text-[#123B5D]">{c.parcel?.owner?.name || c.citizen?.name}</strong></span>
+                  {(c.parcel?.owner?.profile?.panStatus === 'VERIFIED' || c.citizen?.profile?.panStatus === 'VERIFIED') && (
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#E8F4EC] text-[#2E7D5B] border border-[#2E7D5B]/30">
+                      ✓ KYC Verified
+                    </span>
+                  )}
+                  {(c.parcel?.owner?.phone || c.citizen?.phone) && (
+                    <span className="text-[#0284C7] font-medium">• {c.parcel?.owner?.phone || c.citizen?.phone}</span>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-between items-center pt-2 border-t border-[#DDE6EC]">

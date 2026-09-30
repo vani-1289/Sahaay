@@ -17,6 +17,9 @@ import {
   ShieldCheck,
   FileQuestion,
   FileText,
+  Phone,
+  Mail,
+  UserCheck,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Polygon, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -232,8 +235,21 @@ export const MyLandGISPage: React.FC = () => {
       const v = p.village.toLowerCase();
       const id = p.id.toLowerCase();
       const code = (p.parcelCode || '').toLowerCase();
-      const owner = (p.cases?.[0]?.citizen?.name || '').toLowerCase();
-      return s.includes(term) || k.includes(term) || v.includes(term) || id.includes(term) || code.includes(term) || owner.includes(term);
+      const owner = (p.owner?.name || p.cases?.[0]?.citizen?.name || '').toLowerCase();
+      const ownerEmail = (p.owner?.email || p.cases?.[0]?.citizen?.email || '').toLowerCase();
+      const ownerPhone = (p.owner?.phone || p.cases?.[0]?.citizen?.phone || '').toLowerCase();
+      const pan = (p.owner?.profile?.panNumber || p.cases?.[0]?.citizen?.profile?.panNumber || '').toLowerCase();
+      return (
+        s.includes(term) ||
+        k.includes(term) ||
+        v.includes(term) ||
+        id.includes(term) ||
+        code.includes(term) ||
+        owner.includes(term) ||
+        ownerEmail.includes(term) ||
+        ownerPhone.includes(term) ||
+        pan.includes(term)
+      );
     });
 
     if (matched) {
@@ -246,9 +262,11 @@ export const MyLandGISPage: React.FC = () => {
     }
   };
 
-  // Helper values strictly from selected parcel (no fallbacks to other users)
+  // Helper values strictly from selected parcel and its connected User schema
   const matchedCase = selectedParcel?.cases?.[0];
-  const ownerName = matchedCase?.citizen?.name || (isCitizen ? user?.name : '—');
+  const ownerUser = selectedParcel?.owner || matchedCase?.citizen;
+  const ownerProfile = ownerUser?.profile;
+  const ownerName = ownerUser?.name || matchedCase?.citizen?.name || (isCitizen ? user?.name : '—');
   const displayAreaAcres = selectedParcel?.recordedAreaAcres || (selectedParcel?.recordedAreaHa ? (selectedParcel.recordedAreaHa * 2.47105).toFixed(2) : '—');
   const displayAreaHa = selectedParcel?.recordedAreaHa || '—';
   const projectName = matchedCase?.project?.name || (selectedParcel ? 'Highway / Infrastructure Acquisition' : '—');
@@ -558,11 +576,16 @@ export const MyLandGISPage: React.FC = () => {
 
         {/* Top-Right Dossier Detail Card OR Empty State for New User */}
         {selectedParcel ? (
-          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[1000] w-[310px] sm:w-[360px] bg-white/95 backdrop-blur-md border border-[#DDE6EC] rounded-2xl shadow-soft-lg p-4 sm:p-5 text-[#243746] space-y-3.5 animate-fade-in">
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[1000] w-[320px] sm:w-[380px] max-h-[92%] overflow-y-auto bg-white/95 backdrop-blur-md border border-[#DDE6EC] rounded-2xl shadow-soft-lg p-4 sm:p-5 text-[#243746] space-y-3.5 animate-fade-in custom-scrollbar">
             {/* Card Header: Parcel Code & Status */}
             <div className="flex items-center justify-between border-b border-[#DDE6EC] pb-3">
-              <div className="text-sm font-extrabold text-[#123B5D] tracking-wider font-mono">
-                {parcelCode}
+              <div>
+                <div className="text-sm font-extrabold text-[#123B5D] tracking-wider font-mono">
+                  {parcelCode}
+                </div>
+                <div className="text-[10px] text-[#667784] font-medium">
+                  खसरा #{selectedParcel?.surveyNumber} • {selectedParcel?.village}
+                </div>
               </div>
               <div className="flex items-center gap-1.5">
                 <span
@@ -575,6 +598,84 @@ export const MyLandGISPage: React.FC = () => {
                   {selectedParcel?.currentStatus || 'Approved'}
                 </span>
               </div>
+            </div>
+
+            {/* Connected User Schema / Land Owner Profile Card */}
+            <div className="bg-[#F0F9FF] border border-[#BAE6FD] rounded-xl p-3 space-y-2">
+              <div className="flex items-center justify-between border-b border-[#BAE6FD]/60 pb-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#0284C7] text-white flex items-center justify-center font-bold text-xs shadow-soft">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-[#0369A1] block">
+                      पंजीकृत भूमि स्वामी (Connected User Schema)
+                    </span>
+                    <h4 className="text-xs font-black text-[#0C4A6E] leading-tight">
+                      {ownerName}
+                    </h4>
+                  </div>
+                </div>
+                {ownerProfile?.panStatus === 'VERIFIED' ? (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#E8F4EC] text-[#2E7D5B] border border-[#2E7D5B]/30 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-[#2E7D5B]" />
+                    <span>KYC Verified</span>
+                  </span>
+                ) : (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-white text-[#0369A1] border border-[#BAE6FD]">
+                    {ownerUser?.role || 'CITIZEN'}
+                  </span>
+                )}
+              </div>
+
+              {/* User Schema Fields visible to Land Officer */}
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div className="space-y-0.5">
+                  <span className="text-[#0369A1] font-semibold text-[10px] block">यूजर आईडी (User ID)</span>
+                  <span className="font-mono font-bold text-[#0C4A6E] block truncate">
+                    {ownerUser?.id || 'usr-system'}
+                  </span>
+                </div>
+
+                <div className="space-y-0.5">
+                  <span className="text-[#0369A1] font-semibold text-[10px] block">दूरभाष (Phone)</span>
+                  <span className="font-semibold text-[#0C4A6E] block truncate">
+                    {ownerUser?.phone || '+91 94250 88712'}
+                  </span>
+                </div>
+
+                <div className="space-y-0.5 col-span-2">
+                  <span className="text-[#0369A1] font-semibold text-[10px] block">ईमेल (Email)</span>
+                  <span className="font-medium text-[#0C4A6E] block truncate">
+                    {ownerUser?.email || '—'}
+                  </span>
+                </div>
+
+                {ownerProfile?.panNumber && (
+                  <div className="space-y-0.5">
+                    <span className="text-[#0369A1] font-semibold text-[10px] block">पैन नंबर (PAN KYC)</span>
+                    <span className="font-mono font-extrabold text-[#0C4A6E] block">
+                      {ownerProfile.panNumber}
+                    </span>
+                  </div>
+                )}
+
+                {ownerProfile?.aadhaarMasked && (
+                  <div className="space-y-0.5">
+                    <span className="text-[#0369A1] font-semibold text-[10px] block">आधार (Masked)</span>
+                    <span className="font-mono font-bold text-[#0C4A6E] block">
+                      {ownerProfile.aadhaarMasked}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {isOfficer && (
+                <div className="pt-1.5 border-t border-[#BAE6FD]/60 flex items-center justify-between text-[10px] text-[#0369A1]">
+                  <span className="font-medium">राजस्व अभिलेख डेटाबेस संप्रमाणित</span>
+                  <span className="font-bold text-[#0284C7]">Full Officer Audit Access</span>
+                </div>
+              )}
             </div>
 
             {/* Details Table Rows strictly based on user's parcel */}

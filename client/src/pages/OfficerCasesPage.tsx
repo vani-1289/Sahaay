@@ -191,41 +191,81 @@ export const OfficerCasesPage: React.FC = () => {
       {/* Cases Registry List */}
       <div className="space-y-4">
         {cases.length > 0 ? (
-          cases.map((c) => (
-            <div
-              key={c.id}
-              className="soft-card p-4 sm:p-6 space-y-4 hover:border-[#123B5D] transition"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DDE6EC] pb-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono font-bold text-sm text-[#123B5D] bg-[#EAF3F8] px-2.5 py-1 rounded-md border border-[#DDE6EC]">
-                    #{c.caseReference}
-                  </span>
-                  <span className="text-xs text-[#667784] font-medium">
-                    {t('project', language)}: <strong className="text-[#123B5D]">{c.project?.name}</strong>
-                  </span>
-                </div>
-                <StatusBadge status={c.stage} />
-              </div>
+          cases.map((c) => {
+            const ownerUser = c.parcel?.owner || c.citizen;
+            const ownerProfile = ownerUser?.profile;
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 text-xs">
-                <div>
-                  <span className="text-[#667784] block text-[11px]">{t('surveyParcelLabel', language)}:</span>
-                  <span className="font-bold text-[#123B5D] font-mono">#{c.parcel?.surveyNumber}</span>
+            return (
+              <div
+                key={c.id}
+                className="soft-card p-4 sm:p-6 space-y-4 hover:border-[#123B5D] transition"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DDE6EC] pb-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono font-bold text-sm text-[#123B5D] bg-[#EAF3F8] px-2.5 py-1 rounded-md border border-[#DDE6EC]">
+                      #{c.caseReference}
+                    </span>
+                    <span className="text-xs text-[#667784] font-medium">
+                      {t('project', language)}: <strong className="text-[#123B5D]">{c.project?.name}</strong>
+                    </span>
+                  </div>
+                  <StatusBadge status={c.stage} />
                 </div>
-                <div>
-                  <span className="text-[#667784] block text-[11px]">{t('villageTehsilLabel', language)}:</span>
-                  <span className="font-semibold text-[#243746]">{c.parcel?.village}, {c.parcel?.district}</span>
+
+                {/* Linked Landowner User Schema Box for Officer */}
+                {ownerUser && (
+                  <div className="bg-[#F0F9FF] border border-[#BAE6FD] rounded-xl p-3 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-[#0284C7] text-white flex items-center justify-center font-bold text-xs shadow-soft">
+                        👤
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-[#0369A1]">
+                            भूमि स्वामी (Registered Owner): {ownerUser.name}
+                          </span>
+                          <span className="font-mono text-[10px] text-[#0284C7] bg-white px-2 py-0.5 rounded border border-[#BAE6FD] font-semibold">
+                            {ownerUser.id}
+                          </span>
+                          {ownerProfile?.panStatus === 'VERIFIED' && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#E8F4EC] text-[#2E7D5B] border border-[#2E7D5B]/30">
+                              ✓ KYC Verified
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-[#0284C7] mt-0.5 flex flex-wrap gap-x-3">
+                          <span>Phone: <strong className="text-[#0C4A6E]">{ownerUser.phone || '—'}</strong></span>
+                          <span>Email: <strong className="text-[#0C4A6E]">{ownerUser.email || '—'}</strong></span>
+                          {ownerProfile?.panNumber && (
+                            <span>PAN: <strong className="text-[#0C4A6E] font-mono">{ownerProfile.panNumber}</strong></span>
+                          )}
+                          {ownerProfile?.aadhaarMasked && (
+                            <span>Aadhaar: <strong className="text-[#0C4A6E] font-mono">{ownerProfile.aadhaarMasked}</strong></span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 text-xs">
+                  <div>
+                    <span className="text-[#667784] block text-[11px]">{t('surveyParcelLabel', language)}:</span>
+                    <span className="font-bold text-[#123B5D] font-mono">#{c.parcel?.surveyNumber}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#667784] block text-[11px]">{t('villageTehsilLabel', language)}:</span>
+                    <span className="font-semibold text-[#243746]">{c.parcel?.village}, {c.parcel?.district}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#667784] block text-[11px]">{t('citizenPortal', language)}:</span>
+                    <span className="font-semibold text-[#243746]">{c.citizen?.name}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#667784] block text-[11px]">{t('certifiedAreaLabel', language)}:</span>
+                    <span className="font-bold text-[#2E7D5B] font-mono">{c.parcel?.recordedAreaHa} ha</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[#667784] block text-[11px]">{t('citizenPortal', language)}:</span>
-                  <span className="font-semibold text-[#243746]">{c.citizen?.name}</span>
-                </div>
-                <div>
-                  <span className="text-[#667784] block text-[11px]">{t('certifiedAreaLabel', language)}:</span>
-                  <span className="font-bold text-[#2E7D5B] font-mono">{c.parcel?.recordedAreaHa} ha</span>
-                </div>
-              </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-3 border-t border-[#DDE6EC] text-xs">
                 <span className="text-[#667784] text-[11px]">
@@ -252,8 +292,9 @@ export const OfficerCasesPage: React.FC = () => {
                 </div>
               </div>
             </div>
-          ))
-        ) : (
+          );
+        })
+      ) : (
           <div className="soft-card p-10 text-center text-xs text-[#667784]">
             {t('noParcelsFoundTitle', language)}
           </div>

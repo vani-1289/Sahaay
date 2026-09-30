@@ -17,9 +17,31 @@ export async function getOfficerDashboard(req: Request, res: Response, next: Nex
 
     const recentCases = await prisma.acquisitionCase.findMany({
       include: {
-        parcel: true,
+        parcel: {
+          include: {
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                email: true,
+                role: true,
+                profile: true,
+              },
+            },
+          },
+        },
         project: true,
-        citizen: { select: { id: true, name: true, phone: true } },
+        citizen: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            role: true,
+            profile: true,
+          },
+        },
       },
       orderBy: { updatedAt: 'desc' },
       take: 6,
@@ -28,9 +50,31 @@ export async function getOfficerDashboard(req: Request, res: Response, next: Nex
     const pendingGrievanceList = await prisma.grievance.findMany({
       where: { status: { in: ['SUBMITTED', 'UNDER_REVIEW'] } },
       include: {
-        parcel: true,
+        parcel: {
+          include: {
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                email: true,
+                role: true,
+                profile: true,
+              },
+            },
+          },
+        },
         case: { include: { project: true } },
-        citizen: { select: { id: true, name: true, phone: true } },
+        citizen: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            role: true,
+            profile: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: 6,
@@ -78,9 +122,31 @@ export async function getOfficerCases(req: Request, res: Response, next: NextFun
     const cases = await prisma.acquisitionCase.findMany({
       where: whereClause,
       include: {
-        parcel: true,
+        parcel: {
+          include: {
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                role: true,
+                profile: true,
+              },
+            },
+          },
+        },
         project: true,
-        citizen: { select: { id: true, name: true, email: true, phone: true } },
+        citizen: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            role: true,
+            profile: true,
+          },
+        },
         compensationRecord: true,
         grievances: true,
         documents: true,
@@ -107,9 +173,31 @@ export async function getOfficerGrievances(req: Request, res: Response, next: Ne
     const grievances = await prisma.grievance.findMany({
       where: whereClause,
       include: {
-        parcel: true,
+        parcel: {
+          include: {
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                role: true,
+                profile: true,
+              },
+            },
+          },
+        },
         case: { include: { project: true } },
-        citizen: { select: { id: true, name: true, email: true, phone: true } },
+        citizen: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            role: true,
+            profile: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

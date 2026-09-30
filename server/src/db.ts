@@ -1701,23 +1701,59 @@ function matchesParcelFilter(p: any, w: any): boolean {
 
 function populateParcel(p: any, include?: any) {
   const res = { ...p };
-  const owner = inMemoryStore.users.find((u) => u.id === p.ownerId);
+  // Find owner directly by ownerId, or fallback to the citizen linked to this parcel's case
+  let owner = inMemoryStore.users.find((u) => u.id === p.ownerId);
+  if (!owner) {
+    const acqCase = inMemoryStore.cases.find((c) => c.parcelId === p.id);
+    if (acqCase) {
+      owner = inMemoryStore.users.find((u) => u.id === acqCase.citizenId);
+    }
+  }
+
   if (owner) {
-    res.owner = { id: owner.id, name: owner.name, email: owner.email, phone: owner.phone };
+    const prof = inMemoryStore.profiles.find((pr) => pr.userId === owner.id);
+    res.owner = {
+      id: owner.id,
+      name: owner.name,
+      email: owner.email,
+      phone: owner.phone,
+      role: owner.role,
+      profile: prof
+        ? {
+            id: prof.id,
+            userId: prof.userId,
+            panNumber: prof.panNumber,
+            panStatus: prof.panStatus,
+            aadhaarMasked: prof.aadhaarMasked,
+            village: prof.village,
+            district: prof.district,
+            state: prof.state,
+            preferredLanguage: prof.preferredLanguage,
+          }
+        : null,
+    };
   } else {
     res.owner = null;
   }
+
   const matchedCases = inMemoryStore.cases
     .filter((c) => c.parcelId === p.id)
     .map((c) => {
       const citizen = inMemoryStore.users.find((u) => u.id === c.citizenId) || inMemoryStore.users[0];
+      const citizenProf = inMemoryStore.profiles.find((pr) => pr.userId === citizen.id);
       const proj = inMemoryStore.projects.find((pr) => pr.id === c.projectId) || inMemoryStore.projects[0];
       const comp = inMemoryStore.compensations.find((cmp) => cmp.caseId === c.id);
       const docs = inMemoryStore.documents.filter((d) => d.caseId === c.id || d.parcelId === p.id);
       return {
         ...c,
         project: { ...proj },
-        citizen: { id: citizen.id, name: citizen.name, email: citizen.email, phone: citizen.phone },
+        citizen: {
+          id: citizen.id,
+          name: citizen.name,
+          email: citizen.email,
+          phone: citizen.phone,
+          profile: citizenProf || null,
+        },
         compensationRecord: comp ? { ...comp } : null,
         documents: docs.map((d) => ({ ...d })),
       };
@@ -1729,7 +1765,8 @@ function populateParcel(p: any, include?: any) {
 
 function populateCase(c: any, include: any) {
   const res = { ...c };
-  res.parcel = inMemoryStore.parcels.find((p) => p.id === c.parcelId) || inMemoryStore.parcels[0];
+  const rawParcel = inMemoryStore.parcels.find((p) => p.id === c.parcelId) || inMemoryStore.parcels[0];
+  res.parcel = populateParcel(rawParcel);
   res.project = inMemoryStore.projects.find((pr) => pr.id === c.projectId) || inMemoryStore.projects[0];
   res.compensationRecord = inMemoryStore.compensations.find((cmp) => cmp.caseId === c.id) || inMemoryStore.compensations[0];
   res.rrRecord = inMemoryStore.rrRecords.find((r) => r.caseId === c.id) || inMemoryStore.rrRecords[0];

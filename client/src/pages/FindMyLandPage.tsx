@@ -324,7 +324,9 @@ export const FindMyLandPage: React.FC = () => {
           <div className="grid grid-cols-1 gap-5">
             {results.map((parcel) => {
               const matchedCase = parcel.cases?.[0];
-              const ownerName = parcel.owner?.name || matchedCase?.citizen?.name || (isCitizen ? user?.name : '—');
+              const ownerUser = parcel.owner || matchedCase?.citizen;
+              const ownerProfile = ownerUser?.profile;
+              const ownerName = ownerUser?.name || matchedCase?.citizen?.name || (isCitizen ? user?.name : '—');
               const displayAreaAcres =
                 parcel.recordedAreaAcres ||
                 (parcel.recordedAreaHa ? (parcel.recordedAreaHa * 2.47105).toFixed(2) : '—');
@@ -370,6 +372,42 @@ export const FindMyLandPage: React.FC = () => {
                       <span className="text-xs text-[#667784] block">({displayAreaHa} ha)</span>
                     </div>
                   </div>
+
+                  {/* Connected User Schema / Citizen Dossier Details */}
+                  {ownerUser && (
+                    <div className="px-4 py-2.5 bg-[#F0F9FF] border border-[#BAE6FD] rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-[#0284C7] text-white flex items-center justify-center font-bold text-xs shadow-soft">
+                          👤
+                        </div>
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-extrabold text-[#0369A1]">
+                              भूमि स्वामी (Land Owner): {ownerName}
+                            </span>
+                            {ownerProfile?.panStatus === 'VERIFIED' && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#E8F4EC] text-[#2E7D5B] border border-[#2E7D5B]/30">
+                                ✓ KYC Verified
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-[#0284C7] mt-0.5 flex flex-wrap gap-x-3">
+                            <span>Phone: <strong className="text-[#0C4A6E]">{ownerUser.phone || '—'}</strong></span>
+                            <span>Email: <strong className="text-[#0C4A6E]">{ownerUser.email || '—'}</strong></span>
+                            {ownerProfile?.panNumber && (
+                              <span>PAN: <strong className="text-[#0C4A6E] font-mono">{ownerProfile.panNumber}</strong></span>
+                            )}
+                            {ownerProfile?.aadhaarMasked && (
+                              <span>Aadhaar: <strong className="text-[#0C4A6E] font-mono">{ownerProfile.aadhaarMasked}</strong></span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold bg-white text-[#0369A1] px-2.5 py-1 rounded border border-[#BAE6FD] shadow-soft">
+                        User ID: {ownerUser.id}
+                      </span>
+                    </div>
+                  )}
 
                   {/* 8 Cadastral Detail Fields strictly from parcel */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-[#F8FAFC] p-4 rounded-xl border border-[#DDE6EC] text-xs">

@@ -71,17 +71,21 @@ export interface Parcel {
   id: string;
   surveyNumber: string;
   khasraNumber?: string;
+  parcelCode?: string;
   village: string;
   tehsil: string;
   district: string;
   state: string;
   recordedAreaHa: number;
+  recordedAreaAcres?: number;
   landType: string;
   currentStatus: string;
   coordinatesJson?: string;
   centroidLat?: number;
   centroidLng?: number;
   cases?: AcquisitionCase[];
+  ownerId?: string;
+  owner?: User;
 }
 
 export interface AcquisitionCase {
@@ -92,7 +96,7 @@ export interface AcquisitionCase {
   projectId: string;
   project: Project;
   citizenId: string;
-  citizen?: { id: string; name: string; email?: string; phone?: string };
+  citizen?: User;
   stage: 'PROPOSAL' | 'NOTIFICATION' | 'VERIFICATION' | 'AWARD' | 'COMPENSATION' | 'RR' | 'POSSESSION' | 'CLOSURE';
   status: 'ACTIVE' | 'PENDING' | 'COMPLETED' | 'DISPUTED';
   notificationSection: string;
