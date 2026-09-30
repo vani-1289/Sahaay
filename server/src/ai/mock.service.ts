@@ -111,6 +111,22 @@ Key Takeaways in Simple Words:
     return `This document is a formal statutory notice issued by the Land Acquisition Authority under the RFCTLARR Act, 2013. It notifies that your parcel is included in the project alignment corridor. You are entitled to review compensation schedules and submit clarifications before final award declaration.`;
   }
 
+  async explainDocumentStream(
+    rawText: string,
+    docType: string,
+    language = 'en',
+    onChunk: (chunk: string) => void
+  ): Promise<string> {
+    const fullText = await this.explainDocument(rawText, docType, language);
+    const words = fullText.split(' ');
+    for (let i = 0; i < words.length; i += 4) {
+      const chunk = words.slice(i, i + 4).join(' ') + ' ';
+      onChunk(chunk);
+    }
+    return fullText;
+  }
+
+
   async detectDiscrepancies(
     extracted: ExtractedDocumentData,
     recorded: RecordedParcelContext

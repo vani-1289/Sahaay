@@ -46,5 +46,7 @@ export interface RecordedParcelContext {
 export interface IAIService {
   extractDocument(filePath: string, mimeType: string, originalName: string): Promise<ExtractedDocumentData>;
   explainDocument(rawText: string, docType: string, language?: string): Promise<string>;
+  explainDocumentStream?(rawText: string, docType: string, language: string, onChunk: (chunk: string) => void): Promise<string>;
   detectDiscrepancies(extracted: ExtractedDocumentData, recorded: RecordedParcelContext): Promise<DiscrepancyReport>;
 }
+

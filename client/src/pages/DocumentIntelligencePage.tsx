@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { DiscrepancyAlert } from '../components/common/DiscrepancyAlert.js';
@@ -9,6 +9,8 @@ import {
   RefreshCw,
   Info,
   Scale,
+  Languages,
+  Cpu,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore.js';
 import { t } from '../lib/i18n.js';
@@ -21,6 +23,16 @@ export const DocumentIntelligencePage: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [error, setError] = useState('');
   const [activeSample, setActiveSample] = useState<string | null>(null);
+
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(language || 'en');
+  const [liveExplanation, setLiveExplanation] = useState<string>('');
+  const [isStreaming, setIsStreaming] = useState(false);
+
+  useEffect(() => {
+    if (analysisResult?.extractedData?.plainLanguageExplanation) {
+      setLiveExplanation(analysisResult.extractedData.plainLanguageExplanation);
+    }
+  }, [analysisResult]);
 
   const demoSamples = [
     {
@@ -71,6 +83,28 @@ export const DocumentIntelligencePage: React.FC = () => {
     setActiveSample(sample.id);
     const mockFile = new File(['%PDF-1.4 sample'], sample.filename, { type: 'application/pdf' });
     handleFileUpload(mockFile);
+  };
+
+  const handleLanguageStream = async (newLang: string) => {
+    setSelectedLanguage(newLang);
+    const rawText = analysisResult?.extractedData?.rawText || '';
+    const docType = analysisResult?.extractedData?.documentType || 'ACQUISITION_NOTICE';
+    if (!rawText) return;
+
+    setIsStreaming(true);
+    setLiveExplanation('');
+    try {
+      await api.streamExplainDocument(
+        { rawText, docType, language: newLang },
+        (chunk) => {
+          setLiveExplanation((prev) => prev + chunk);
+        }
+      );
+    } catch (err: any) {
+      console.warn('Streaming explanation fallback:', err);
+    } finally {
+      setIsStreaming(false);
+    }
   };
 
   const extracted = analysisResult?.extractedData;
@@ -273,17 +307,66 @@ export const DocumentIntelligencePage: React.FC = () => {
             />
           )}
 
-          {/* Plain Language Summary */}
-          <div className="soft-card p-6 space-y-3">
-            <div className="flex items-center space-x-2 border-b border-[#DDE6EC] pb-2">
-              <Info className="w-4 h-4 text-[#123B5D]" />
-              <h3 className="text-sm font-bold text-[#123B5D]">
-                {t('plainSummaryTitle', language)}
-              </h3>
+          {/* Plain Language Summary with Live NVIDIA NIM Multilingual Streaming */}
+          <div className="soft-card p-6 space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-[#DDE6EC] pb-3">
+              <div className="flex items-center space-x-2">
+                <Info className="w-4 h-4 text-[#123B5D]" />
+                <h3 className="text-sm font-bold text-[#123B5D]">
+                  {t('plainSummaryTitle', language)}
+                </h3>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono font-bold bg-[#EAF3F8] text-[#0284C7] px-2 py-0.5 rounded border border-[#BAE6FD]">
+                  <Cpu className="w-3 h-3 text-[#0284C7]" />
+                  <span>NVIDIA NIM • meta/llama-3.2-90b-vision-instruct</span>
+                </span>
+              </div>
+
+              {/* Language Selection Bar */}
+              <div className="flex items-center gap-2">
+                <Languages className="w-3.5 h-3.5 text-[#667784]" />
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => handleLanguageStream(e.target.value)}
+                  disabled={isStreaming}
+                  className="px-2.5 py-1 text-xs font-semibold text-[#123B5D] bg-[#F8FAFC] border border-[#DDE6EC] rounded-lg focus:outline-none cursor-pointer"
+                  title="Translate and stream in native script"
+                >
+                  <option value="en">English (English)</option>
+                  <option value="hi">हिन्दी (Hindi)</option>
+                  <option value="mr">मराठी (Marathi)</option>
+                  <option value="bn">বাংলা (Bengali)</option>
+                  <option value="gu">ગુજરાતી (Gujarati)</option>
+                  <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                  <option value="ta">தமிழ் (Tamil)</option>
+                  <option value="te">తెలుగు (Telugu)</option>
+                  <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                  <option value="ml">മലയാളം (Malayalam)</option>
+                  <option value="or">ଓଡ଼ିଆ (Odia)</option>
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => handleLanguageStream(selectedLanguage)}
+                  disabled={isStreaming}
+                  className="px-2.5 py-1 text-[11px] font-bold bg-[#123B5D] hover:bg-[#1B4D78] text-white rounded-lg transition shadow-soft cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                >
+                  {isStreaming ? (
+                    <>
+                      <RefreshCw className="w-3 h-3 animate-spin text-[#E8B84A]" />
+                      <span>Streaming...</span>
+                    </>
+                  ) : (
+                    <span>Explain in Native Script</span>
+                  )}
+                </button>
+              </div>
             </div>
 
-            <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#DDE6EC] text-xs text-[#243746] leading-relaxed whitespace-pre-line font-normal">
-              {extracted.plainLanguageExplanation}
+            <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#DDE6EC] text-xs text-[#243746] leading-relaxed whitespace-pre-line font-normal relative">
+              {liveExplanation || extracted.plainLanguageExplanation}
+              {isStreaming && (
+                <span className="inline-block w-2 h-3.5 ml-1 bg-[#123B5D] animate-pulse align-middle" />
+              )}
             </div>
 
             {extracted.actionRequired && (

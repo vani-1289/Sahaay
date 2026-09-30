@@ -144,6 +144,22 @@ export class OcrAIService implements IAIService {
     return `This document is a formal statutory notice under the RFCTLARR Act 2013. It notifies the government's intent to acquire land for public infrastructure. Landowners have 60 days from the publication date to file objections regarding land measurement, valuation, or ownership.`;
   }
 
+  async explainDocumentStream(
+    rawText: string,
+    docType: string,
+    language = 'en',
+    onChunk: (chunk: string) => void
+  ): Promise<string> {
+    const fullText = await this.explainDocument(rawText, docType, language);
+    const words = fullText.split(' ');
+    for (let i = 0; i < words.length; i += 4) {
+      const chunk = words.slice(i, i + 4).join(' ') + ' ';
+      onChunk(chunk);
+    }
+    return fullText;
+  }
+
+
   private generateExplanation(fields: {
     surveyNumber?: string;
     village?: string;

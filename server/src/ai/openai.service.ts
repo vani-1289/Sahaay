@@ -2,12 +2,59 @@ import { IAIService, ExtractedDocumentData, DiscrepancyReport, RecordedParcelCon
 import { MockAIService } from './mock.service';
 import { logger } from '../utils/logger';
 
+export const NVIDIA_NIM_ENDPOINT = 'https://integrate.api.nvidia.com/v1/chat/completions';
+export const NVIDIA_NIM_MODEL = 'meta/llama-3.2-90b-vision-instruct';
+
+export const SAHAAY_SYSTEM_PROMPT = `You are SAHAAY AI (सहाय), an expert citizen-first legal and revenue assistance AI specialized in Indian Land Acquisition and the Right to Fair Compensation and Transparency in Land Acquisition, Rehabilitation and Resettlement Act, 2013 (RFCTLARR Act, 2013) alongside State Revenue Codes (e.g., Madhya Pradesh Land Revenue Code / Bhulekh).
+
+Your mission is to empower rural citizens, farmers, and land owners by analyzing complex statutory government land acquisition notices and legal revenue documents. You must translate dense legal jargon into transparent, reassuring, and empowering plain language.
+
+Follow these strict instructions:
+1. DOCUMENT CLASSIFICATION & STATUTORY STAGE:
+   - Identify whether the document is a Section 11(1) Preliminary Notification, Section 15 Hearing of Objections, Section 19(1) Declaration, Section 21 Public Notice, Section 23/30 Final Compensation Award, or Form B-1 Khasra / Khatauni Land Record.
+
+2. STRUCTURED EXTRACTION:
+   - Extract Survey / Khasra Number, Village, Tehsil, District, State.
+   - Extract Notified Area (both in Hectares and Acres).
+   - Extract Project Name and Sponsoring/Executing Agency (e.g., NHAI, MPIDC, Railways, State PWD).
+   - Identify Statutory Reference Numbers and Notice Dates.
+
+3. STATUTORY TIMELINES & CITIZEN RIGHTS:
+   - Clearly state the 60-day objection window under Section 15(1) if applicable.
+   - Explain statutory compensation entitlements (Market Value Multiplier 1.0x-2.0x, 100% Solatium under Section 30, and 12% additional interest per annum from Section 11 notice to award).
+   - Note Rehabilitation and Resettlement (R&R) entitlements under the Second Schedule.
+
+4. DISCREPANCY & FRAUD ADVISORY:
+   - Highlight any potential boundary or area mismatches.
+   - Warn against distress selling, unauthorized private brokers, or post-notification land usage changes.
+
+5. ACTIONABLE NEXT STEPS:
+   - Provide concrete, stepwise guidance on how to submit objections to the Land Acquisition Officer (CALAO) with copies of Bhu-Naksha, Khasra B-1, Aadhaar, and PAN.
+
+6. LANGUAGE & SCRIPT ADHERENCE:
+   - You MUST write the entire response in the requested language and its native script (e.g. Hindi in Devanagari, Bengali in Bengali script, Gujarati in Gujarati script, Marathi in Devanagari script, Punjabi in Gurmukhi script, English in Latin script). Maintain a respectful, supportive, and empowering tone suitable for rural land owners.`;
+
+const LANGUAGE_MAP: Record<string, { name: string; script: string }> = {
+  en: { name: 'English', script: 'Latin' },
+  hi: { name: 'Hindi', script: 'Devanagari' },
+  bn: { name: 'Bengali', script: 'Bengali' },
+  mr: { name: 'Marathi', script: 'Devanagari' },
+  gu: { name: 'Gujarati', script: 'Gujarati' },
+  pa: { name: 'Punjabi', script: 'Gurmukhi' },
+  ta: { name: 'Tamil', script: 'Tamil' },
+  te: { name: 'Telugu', script: 'Telugu' },
+  kn: { name: 'Kannada', script: 'Kannada' },
+  ml: { name: 'Malayalam', script: 'Malayalam' },
+  or: { name: 'Odia', script: 'Odia' },
+};
+
 export class OpenAIService implements IAIService {
   private apiKey: string;
   private mockFallback: MockAIService;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.OPENAI_API_KEY || '';
+    // Check NVIDIA_API_KEY first, fallback to OPENAI_API_KEY for seamless compatibility
+    this.apiKey = apiKey || process.env.NVIDIA_API_KEY || process.env.OPENAI_API_KEY || '';
     this.mockFallback = new MockAIService();
   }
 
@@ -16,55 +63,128 @@ export class OpenAIService implements IAIService {
     mimeType: string,
     originalName: string
   ): Promise<ExtractedDocumentData> {
-    if (!this.apiKey) {
-      logger.info('No OPENAI_API_KEY found, using high-fidelity deterministic AI fallback');
-      return this.mockFallback.extractDocument(filePath, mimeType, originalName);
+    // Primary extraction via structured OCR / parsing engine
+    const baseExtracted = await this.mockFallback.extractDocument(filePath, mimeType, originalName);
+
+    // If NVIDIA_API_KEY is available and document text exists, enhance explanation with NVIDIA NIM
+    if (this.apiKey && baseExtracted.rawText) {
+      try {
+        const nimExplanation = await this.explainDocument(
+          baseExtracted.rawText,
+          baseExtracted.documentType || 'ACQUISITION_NOTICE',
+          'en'
+        );
+        if (nimExplanation && nimExplanation.trim().length > 0) {
+          baseExtracted.plainLanguageExplanation = nimExplanation;
+        }
+      } catch (nimErr) {
+        logger.warn('NVIDIA NIM explanation enhancement had a fallback, keeping base explanation', nimErr);
+      }
     }
 
-    try {
-      // In production, we can call OpenAI vision / completion
-      // For resilience and zero-downtime, fallback to mock if API returns error
-      const mockResult = await this.mockFallback.extractDocument(filePath, mimeType, originalName);
-      return mockResult;
-    } catch (err) {
-      logger.error('OpenAI extraction error, falling back to mock engine', err);
-      return this.mockFallback.extractDocument(filePath, mimeType, originalName);
-    }
+    return baseExtracted;
   }
 
-  async explainDocument(rawText: string, docType: string, language = 'en'): Promise<string> {
+  /**
+   * Streaming document analysis via NVIDIA NIM (meta/llama-3.2-90b-vision-instruct)
+   */
+  async explainDocumentStream(
+    rawText: string,
+    docType: string,
+    language = 'en',
+    onChunk: (chunk: string) => void
+  ): Promise<string> {
     if (!this.apiKey) {
-      return this.mockFallback.explainDocument(rawText, docType, language);
+      logger.info('No NVIDIA_API_KEY configured, streaming deterministic high-fidelity explanation fallback');
+      const fallbackText = await this.mockFallback.explainDocument(rawText, docType, language);
+      // Simulate chunked streaming for consistent frontend experience
+      const words = fallbackText.split(' ');
+      for (let i = 0; i < words.length; i += 4) {
+        const chunk = words.slice(i, i + 4).join(' ') + ' ';
+        onChunk(chunk);
+      }
+      return fallbackText;
     }
 
-    try {
-      const prompt = `You are Sahaay AI, a citizen assistance AI for rural Indian land acquisition. Explain the following legal document in simple, reassuring, plain-language terms for a citizen in ${
-        language === 'hi' ? 'Hindi' : 'English'
-      }:\n\nDocument Text:\n${rawText.slice(0, 2000)}`;
+    const langInfo = LANGUAGE_MAP[language] || { name: language, script: 'Native' };
+    const userMessage = `Please analyze this uploaded document. The user indicated it might be: ${docType}. Execute your System Prompt instructions. Respond entirely in ${langInfo.name} (${langInfo.script}), using its native script.\n\n--- START OF DOCUMENT TEXT ---\n${rawText.slice(0, 12000)}\n--- END OF DOCUMENT TEXT ---`;
 
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    try {
+      const response = await fetch(NVIDIA_NIM_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 500,
+          model: NVIDIA_NIM_MODEL,
+          temperature: 0.3,
+          top_p: 0.95,
+          max_tokens: 6000,
+          stream: true,
+          messages: [
+            { role: 'system', content: SAHAAY_SYSTEM_PROMPT },
+            { role: 'user', content: userMessage },
+          ],
         }),
       });
 
-      if (!res.ok) {
-        throw new Error(`OpenAI API status ${res.status}`);
+      if (!response.ok || !response.body) {
+        const errText = await response.text();
+        throw new Error(`NVIDIA NIM API responded with ${response.status}: ${errText}`);
       }
 
-      const data: any = await res.json();
-      return data.choices?.[0]?.message?.content || this.mockFallback.explainDocument(rawText, docType, language);
-    } catch (err) {
-      logger.warn('OpenAI call failed, using fallback explanation', err);
+      let accumulated = '';
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith(':')) continue;
+          if (trimmed === 'data: [DONE]') continue;
+
+          if (trimmed.startsWith('data: ')) {
+            try {
+              const parsed = JSON.parse(trimmed.slice(6));
+              const delta = parsed.choices?.[0]?.delta?.content || '';
+              if (delta) {
+                accumulated += delta;
+                onChunk(delta);
+              }
+            } catch {
+              // Ignore partial JSON lines
+            }
+          }
+        }
+      }
+
+      if (accumulated.trim().length > 0) {
+        return accumulated;
+      }
       return this.mockFallback.explainDocument(rawText, docType, language);
+    } catch (err) {
+      logger.warn('NVIDIA NIM call encountered an issue, falling back to local explanation engine', err);
+      const fallback = await this.mockFallback.explainDocument(rawText, docType, language);
+      onChunk(fallback);
+      return fallback;
     }
+  }
+
+  async explainDocument(rawText: string, docType: string, language = 'en'): Promise<string> {
+    let completeText = '';
+    await this.explainDocumentStream(rawText, docType, language, (chunk) => {
+      completeText += chunk;
+    });
+    return completeText;
   }
 
   async detectDiscrepancies(
@@ -74,3 +194,4 @@ export class OpenAIService implements IAIService {
     return this.mockFallback.detectDiscrepancies(extracted, recorded);
   }
 }
+

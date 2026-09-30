@@ -1,4 +1,5 @@
-import { fetchWithAuth } from './apiClient.js';
+import { fetchWithAuth, getApiBase } from './apiClient.js';
+import { useAuthStore } from '../store/authStore.js';
 
 export const authApi = {
   login: (credentials: { email: string; password: string }) =>
@@ -121,6 +122,67 @@ export const officerApi = {
     }),
 };
 
+export const aiApi = {
+  extractDocumentDirect: (payload: { rawText: string; filename?: string }) =>
+    fetchWithAuth('/ai/extract-document', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  explainDocument: (payload: { rawText: string; docType?: string; language?: string }) =>
+    fetchWithAuth('/ai/explain-document', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  streamExplainDocument: async (
+    payload: { rawText: string; docType?: string; language?: string },
+    onChunk: (chunk: string) => void
+  ) => {
+    const token = useAuthStore.getState().token;
+    const baseUrl = getApiBase();
+
+    const response = await fetch(`${baseUrl}/ai/explain-document/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok || !response.body) {
+      throw new Error(`Streaming failed with status ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed === 'data: [DONE]') continue;
+        if (trimmed.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(trimmed.slice(6));
+            if (data.chunk) {
+              onChunk(data.chunk);
+            }
+          } catch {
+            // ignore partial line
+          }
+        }
+      }
+    }
+  },
+};
+
 // Unified api object for backward compatibility across all existing pages
 export const api = {
   ...authApi,
@@ -131,4 +193,6 @@ export const api = {
   ...grievanceApi,
   ...notificationApi,
   ...officerApi,
+  ...aiApi,
 };
+

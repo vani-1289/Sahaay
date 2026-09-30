@@ -10,13 +10,15 @@ let faceVerificationInstance: IFaceVerificationService | null = null;
 
 export function getAIService(): IAIService {
   if (!aiInstance) {
-    const provider = process.env.AI_PROVIDER?.toLowerCase() || 'mock';
-    if (provider === 'openai' && process.env.OPENAI_API_KEY) {
+    const provider = process.env.AI_PROVIDER?.toLowerCase() || '';
+    if (process.env.NVIDIA_API_KEY || provider === 'nvidia') {
+      aiInstance = new OpenAIService(process.env.NVIDIA_API_KEY);
+    } else if (provider === 'openai' && process.env.OPENAI_API_KEY) {
       aiInstance = new OpenAIService(process.env.OPENAI_API_KEY);
     } else if (provider === 'ocr') {
       aiInstance = new OcrAIService();
     } else {
-      aiInstance = new MockAIService();
+      aiInstance = new OpenAIService();
     }
   }
   return aiInstance;
