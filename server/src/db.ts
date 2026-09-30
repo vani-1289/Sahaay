@@ -12,6 +12,13 @@ if (dbUrl && dbUrl.startsWith('postgres://')) {
   process.env.DATABASE_URL = dbUrl;
 }
 
+// Ensure connection pool limits and timeouts for cloud databases (Neon, Render, Supabase)
+if (dbUrl && !dbUrl.includes('connection_limit')) {
+  const sep = dbUrl.includes('?') ? '&' : '?';
+  dbUrl = `${dbUrl}${sep}connection_limit=10&pool_timeout=20`;
+  process.env.DATABASE_URL = dbUrl;
+}
+
 // In production on Render, safely apply committed migrations with fail-fast behavior
 if (process.env.NODE_ENV === 'production' && dbUrl) {
   const schemaPath = path.resolve(__dirname, '../../prisma/schema.prisma');
@@ -1075,7 +1082,14 @@ function isConnectionError(err: any): boolean {
     msg.includes("Can't reach database server") ||
     msg.includes('connection refused') ||
     msg.includes('ECONNREFUSED') ||
-    msg.includes('P1001')
+    msg.includes('P1001') ||
+    msg.includes('Closed') ||
+    msg.includes('kind: Closed') ||
+    msg.includes('Connection closed') ||
+    msg.includes('connection is closed') ||
+    msg.includes('connection terminated') ||
+    msg.includes('ECONNRESET') ||
+    msg.includes('P1017')
   );
 }
 
@@ -1850,11 +1864,21 @@ export const prisma: PrismaClient = new Proxy(rawPrisma as any, {
           try {
             return await modelTarget[methodName](...args);
           } catch (err: any) {
+            const errStr = String(err?.message || err);
+            // If PostgreSQL dropped an idle connection, auto-retry once with a fresh pool connection
+            if (errStr.includes('Closed') || errStr.includes('P1017') || errStr.includes('Connection closed')) {
+              try {
+                return await modelTarget[methodName](...args);
+              } catch (retryErr: any) {
+                err = retryErr;
+              }
+            }
+
             if (isConnectionError(err)) {
               if (isPostgresAvailable) {
                 isPostgresAvailable = false;
                 console.warn(
-                  '⚠️ PostgreSQL is not reachable locally. Seamlessly operating with integrated SAHAAY demo database.'
+                  '⚠️ PostgreSQL is temporarily unreachable. Seamlessly operating with integrated SAHAAY demo database.'
                 );
               }
               if (fallbackModel && typeof fallbackModel[methodName] === 'function') {

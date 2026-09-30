@@ -4,18 +4,20 @@ import { prisma } from './db';
 import { logger } from './utils/logger';
 import { autoSeedDatabase } from './services/seedService';
 
-const PORT = config.PORT;
+const PORT = Number(process.env.PORT) || config.PORT || 5000;
+const HOST = '0.0.0.0';
 const storagePath = config.STORAGE_PATH;
 
 let server: any = null;
 
 if (config.NODE_ENV !== 'test') {
-  server = app.listen(PORT, () => {
+  // Bind explicitly to 0.0.0.0 for Render web services and cloud environments
+  server = app.listen(PORT, HOST, () => {
     logger.info(`=======================================================`);
-    logger.info(` SAHAAY Backend API Server running on port ${PORT}`);
+    logger.info(` SAHAAY Backend API Server running on http://${HOST}:${PORT}`);
     logger.info(` Tagline: "Your Land. Your Case. Your Information."`);
     logger.info(` Storage path: ${storagePath}`);
-    logger.info(` Health check: http://localhost:${PORT}/api/health`);
+    logger.info(` Health check: http://${HOST}:${PORT}/api/health`);
     logger.info(`=======================================================`);
 
     // Verify and seed essential demo accounts for evaluator testing

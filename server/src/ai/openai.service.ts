@@ -67,24 +67,9 @@ export class OpenAIService implements IAIService {
     originalName: string
   ): Promise<ExtractedDocumentData> {
     // Primary extraction via structured OCR / parsing engine
+    // Returns immediately so document upload responds within milliseconds (<500ms)
+    // Deep multi-paragraph legal explanation is streamed dynamically via explainDocumentStream
     const baseExtracted = await this.mockFallback.extractDocument(filePath, mimeType, originalName);
-
-    // If NVIDIA_API_KEY is available and document text exists, enhance explanation with NVIDIA NIM
-    if (this.apiKey && baseExtracted.rawText) {
-      try {
-        const nimExplanation = await this.explainDocument(
-          baseExtracted.rawText,
-          baseExtracted.documentType || 'ACQUISITION_NOTICE',
-          'en'
-        );
-        if (nimExplanation && nimExplanation.trim().length > 0) {
-          baseExtracted.plainLanguageExplanation = nimExplanation;
-        }
-      } catch (nimErr) {
-        logger.warn('NVIDIA NIM explanation enhancement had a fallback, keeping base explanation', nimErr);
-      }
-    }
-
     return baseExtracted;
   }
 
@@ -112,6 +97,10 @@ export class OpenAIService implements IAIService {
     const langInfo = LANGUAGE_MAP[language] || { name: language, script: 'Native' };
     const userMessage = `Please analyze this uploaded document. The user indicated it might be: ${docType}. Execute your System Prompt instructions. Respond entirely in ${langInfo.name} (${langInfo.script}), using its native script.\n\n--- START OF DOCUMENT TEXT ---\n${rawText.slice(0, 12000)}\n--- END OF DOCUMENT TEXT ---`;
 
+    const controller = new AbortController();
+    // 20-second timeout prevents undici HeadersTimeoutError on slow connections
+    const timeoutHandle = setTimeout(() => controller.abort(), 20000);
+
     try {
       const response = await fetch(NVIDIA_NIM_ENDPOINT, {
         method: 'POST',
@@ -130,7 +119,10 @@ export class OpenAIService implements IAIService {
             { role: 'user', content: userMessage },
           ],
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutHandle);
 
       if (!response.ok || !response.body) {
         const errText = await response.text();
@@ -174,8 +166,15 @@ export class OpenAIService implements IAIService {
         return accumulated;
       }
       return this.mockFallback.explainDocument(rawText, docType, language);
-    } catch (err) {
-      logger.warn('NVIDIA NIM call encountered an issue, falling back to local explanation engine', err);
+    } catch (err: any) {
+      clearTimeout(timeoutHandle);
+      const isTimeout = err?.name === 'AbortError' || String(err?.message || '').includes('Headers Timeout');
+      logger.warn(
+        isTimeout
+          ? 'NVIDIA NIM call reached 20s timeout limit, smoothly falling back to local explanation engine'
+          : 'NVIDIA NIM call encountered an issue, falling back to local explanation engine',
+        { message: err?.message }
+      );
       const fallback = await this.mockFallback.explainDocument(rawText, docType, language);
       onChunk(fallback);
       return fallback;
