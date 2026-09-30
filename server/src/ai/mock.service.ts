@@ -70,12 +70,30 @@ export class MockAIService implements IAIService {
 
   async explainDocument(rawText: string, docType: string, language = 'en'): Promise<string> {
     const meta = parseDocumentMetadata(rawText, '');
+    const notifSec = meta.notificationSection || '';
+    const isLand = notifSec.includes('Section') || notifSec.includes('Khasra') || meta.documentType === 'ACQUISITION_NOTICE' || meta.documentType === 'LAND_RECORD' || meta.documentType === 'AWARD_DOCUMENT';
     const sNo = meta.surveyNumber || '1042';
     const vill = meta.village || 'Rampur';
     const dist = meta.district || 'Bhopal';
     const area = meta.areaHa || 2.50;
     const proj = meta.project || 'National Highway Expansion Project';
     const sec = meta.notificationSection || 'Section 11(1)';
+
+    if (!isLand) {
+      const docTitle = meta.notificationSection;
+      const preview = rawText ? rawText.slice(0, 200).replace(/\s+/g, ' ') : 'General Document Content';
+
+      switch (language) {
+        case 'hi':
+          return `यह अपलोड किया गया दस्तावेज़ एक ${docTitle} है।\n\nसरल शब्दों में मुख्य बिंदु:\n1. दस्तावेज़ प्रकार: ${docTitle}\n2. मुख्य सामग्री: ${preview}\n3. नागरिक सलाह: कृपया इस दस्तावेज़ में उल्लिखित सभी शर्तों, तारीखों और जिम्मेदारियों की सावधानीपूर्वक समीक्षा करें।\n4. अगले कदम: आवश्यक प्रमाणों के साथ इस दस्तावेज़ को सुरक्षित रखें तथा किसी भी निर्धारित समयसीमा का पालन करें।`;
+        case 'mr':
+          return `हे अपलोड केलेले दस्तऐवज ${docTitle} आहे.\n\nसोप्या भाषेत महत्त्वाचे मुद्दे:\n1. दस्तऐवज प्रकार: ${docTitle}\n2. मुख्य तपशील: ${preview}\n3. नागरिकांसाठी सूचना: कृपया या दस्तऐवजातील सर्व अटी, तारखा आणि कायदेशीर बाबी काळजीपूर्वक तपासा.\n4. पुढील कृती: आवश्यक नोंदी सुरक्षित ठेवा आणि विहित मुदतीचे पालन करा.`;
+        case 'bn':
+          return `এই আপলোড করা নথিটি একটি ${docTitle}।\n\nসহজ ভাষায় মূল বিষয়সমূহ:\n১. নথির ধরণ: ${docTitle}\n২. মূল বিষয়বস্তু: ${preview}\n৩. নাগরিক পরামর্শ: অনুগ্রহ করে এই নথিতে উল্লিখিত সকল শর্তাবলী এবং গুরুত্বপূর্ণ তারিখসমূহ ভালোভাবে পর্যালোচনা করুন।\n৪. পরবর্তী পদক্ষেপ: নথিটি সুরক্ষিত রাখুন এবং প্রয়োজনীয় সময়সীমা অনুসরণ করুন।`;
+        default:
+          return `This uploaded document is classified as a ${docTitle}.\n\nKey Parameters & Takeaways in Plain Language:\n1. Document Classification: ${docTitle}\n2. Overview & Context: ${preview}\n3. Key Takeaway: Please review all applicable terms, obligations, and validity dates established in this document.\n4. Actionable Steps: Keep this record safely preserved and adhere to any specified compliance deadlines.`;
+      }
+    }
 
     switch (language) {
       case 'hi':

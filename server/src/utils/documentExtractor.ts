@@ -322,56 +322,134 @@ export function parseDocumentMetadata(
     areaHa = isDemo1042 ? 2.73 : 1.00;
   }
 
-  // 5. Project Name
+  // Check if this document is specifically related to Land Acquisition / Revenue
+  const isLandAcquisition =
+    isDemo1042 ||
+    /acquisition|notified\s*area|rfctlarr|land\s*acquisition|भू-?अधिग्रहण|अधिसूचना|खसरा|खातौनी|khasra|khatauni|bhulekh|bhu-naksha|section\s*(?:11|15|19|21|23|30)|solatium/i.test(combined);
+
+  // 5. Project Name & Code
   let project = 'National Highway Expansion Project (NHAI)';
   let projectCode = 'NHAI-STG8';
-  if (lower.includes('metro') || lower.includes('orange line')) {
-    project = 'Bhopal Metro Phase 2 (Orange Line Extension)';
-    projectCode = 'BMRCL-PH2';
-  } else if (lower.includes('airport') || lower.includes('logistics')) {
-    project = 'Raja Bhoj Airport Multi-Modal Logistics Hub';
-    projectCode = 'RBA-LOGISTICS';
-  } else if (lower.includes('nh-46') || lower.includes('nh 46')) {
-    project = 'NH-46 6-Laning Highway Expansion Project';
-    projectCode = 'NH-46-EXP';
-  } else if (lower.includes('railway') || lower.includes('rail')) {
-    project = 'Western Dedicated Freight Corridor (Indian Railways)';
-    projectCode = 'WDFC-MP';
-  }
 
-  // 6. Section & Document Type
+  // 6. Section & Document Type Classification
   let notificationSection = 'Section 11(1) Preliminary Notification';
   let documentType = 'ACQUISITION_NOTICE';
+  let plainLanguageExplanation = '';
+  let actionRequired = '';
 
-  if (/section\s*19|धारा\s*19/i.test(combined)) {
-    notificationSection = 'Section 19(1) Declaration (RFCTLARR Act, 2013)';
-    documentType = 'ACQUISITION_NOTICE';
-  } else if (/section\s*15|धारा\s*15|objection|hearing/i.test(combined)) {
-    notificationSection = 'Section 15 Hearing of Objections';
-    documentType = 'OBJECTION_LETTER';
-  } else if (/section\s*(?:23|30)|धारा\s*(?:23|30)|award|compensation/i.test(combined)) {
-    notificationSection = 'Section 23/30 Final Compensation Award';
-    documentType = 'AWARD_DOCUMENT';
-  } else if (/khasra|b-1|khatauni|bhulekh|land record|खसरा|भूलेख/i.test(combined)) {
-    notificationSection = 'Form B-1 Khasra Land Record';
-    documentType = 'LAND_RECORD';
+  if (isLandAcquisition) {
+    if (lower.includes('metro') || lower.includes('orange line')) {
+      project = 'Bhopal Metro Phase 2 (Orange Line Extension)';
+      projectCode = 'BMRCL-PH2';
+    } else if (lower.includes('airport') || lower.includes('logistics')) {
+      project = 'Raja Bhoj Airport Multi-Modal Logistics Hub';
+      projectCode = 'RBA-LOGISTICS';
+    } else if (lower.includes('nh-46') || lower.includes('nh 46')) {
+      project = 'NH-46 6-Laning Highway Expansion Project';
+      projectCode = 'NH-46-EXP';
+    } else if (lower.includes('railway') || lower.includes('rail')) {
+      project = 'Western Dedicated Freight Corridor (Indian Railways)';
+      projectCode = 'WDFC-MP';
+    }
+
+    if (/section\s*19|धारा\s*19/i.test(combined)) {
+      notificationSection = 'Section 19(1) Declaration (RFCTLARR Act, 2013)';
+      documentType = 'ACQUISITION_NOTICE';
+    } else if (/section\s*15|धारा\s*15|objection|hearing/i.test(combined)) {
+      notificationSection = 'Section 15 Hearing of Objections';
+      documentType = 'OBJECTION_LETTER';
+    } else if (/section\s*(?:23|30)|धारा\s*(?:23|30)|award|compensation/i.test(combined)) {
+      notificationSection = 'Section 23/30 Final Compensation Award';
+      documentType = 'AWARD_DOCUMENT';
+    } else if (/khasra|b-1|khatauni|bhulekh|land record|खसरा|भूलेख/i.test(combined)) {
+      notificationSection = 'Form B-1 Khasra Land Record';
+      documentType = 'LAND_RECORD';
+    }
+
+    plainLanguageExplanation =
+      `This official document is a ${notificationSection} issued for the ${project}.\n\n` +
+      `Key Parameters & Takeaways:\n` +
+      `1. Project: ${project} (${projectCode})\n` +
+      `2. Survey / Khasra Parcel: #${surveyNumber} in Village ${village}, Tehsil ${tehsil}, District ${district}\n` +
+      `3. Notified Area: ${areaHa} Hectares (${(areaHa * 2.471).toFixed(2)} Acres)\n` +
+      `4. Citizen Rights: Under RFCTLARR Act 2013, you have the right to inspect survey records, verify notified boundaries, and submit Section 15 objections within 60 days.\n` +
+      `5. Compensation Protection: Statutory compensation is calculated with a rural multiplier (1.0x-2.0x), 100% Solatium, and 12% annual interest from notice to award.`;
+
+    actionRequired =
+      `Verify notified survey #${surveyNumber} boundaries (${areaHa} ha) against revenue records and submit Section 15 objection if discrepancy exists.`;
+  } else {
+    // Non-Land Documents: Agreements, Court Orders, ID Proofs, Invoices, General Documents
+    const isAgreement = /agreement|contract|lease|rent\s*agreement|deed|sale\s*deed|affidavit|undertaking|mou|memorandum|power\s*of\s*attorney|शपथ\s*पत्र|अनुबंध|करारनामा|इकरारनामा/i.test(combined);
+    const isIdentity = /aadhaar|pan\s*card|passport|voter|driving\s*licence|identity|uidai|income\s*tax|certificate|प्रमाण\s*पत्र|पहचान\s*पत्र/i.test(combined);
+    const isCourt = /court|tribunal|judge|summons|warrant|notice|advocate|decree|order\s*sheet|judgment|न्यायालय|आदेश/i.test(combined);
+    const isFinancial = /invoice|receipt|tax|bill|statement|salary|payment|bank|challan|चालान|रसीद|बिल/i.test(combined);
+
+    if (isAgreement) {
+      documentType = 'LEGAL_AGREEMENT';
+      notificationSection = 'Legal Agreement / Contract / Deed';
+      project = 'Legal Agreement / Civil Contract';
+      projectCode = 'CONTRACT-DOC';
+      plainLanguageExplanation =
+        `This uploaded document is a ${notificationSection}.\n\n` +
+        `Summary & Key Clauses in Plain Language:\n` +
+        `1. Classification: Legally binding civil contract or deed agreement.\n` +
+        `2. Execution & Scope: Sets out reciprocal covenants, responsibilities, and conditions between executing parties.\n` +
+        `3. Critical Safeguards: Review consideration values, tenure, breach remedies, and termination clauses.\n` +
+        `4. Citizen Advisory: Ensure all signatures, witness endorsements, and applicable stamp duties are duly executed.`;
+      actionRequired = 'Carefully review execution covenants, performance milestones, and termination provisions.';
+    } else if (isIdentity) {
+      documentType = 'IDENTITY_DOCUMENT';
+      notificationSection = 'Official Identity & Verification Record';
+      project = 'Citizen Identity Document';
+      projectCode = 'ID-VERIF';
+      plainLanguageExplanation =
+        `This uploaded document is an ${notificationSection}.\n\n` +
+        `Summary & Key Details:\n` +
+        `1. Classification: Government-issued identification document.\n` +
+        `2. Purpose: Used for official identity verification, KYC authentication, and civic registration.\n` +
+        `3. Advisory: Keep your credential numbers secure and ensure your name and date of birth match your revenue and bank records.`;
+      actionRequired = 'Verify that identity details match linked bank accounts and property documentation.';
+    } else if (isCourt) {
+      documentType = 'COURT_ORDER';
+      notificationSection = 'Judicial Order / Legal Notice';
+      project = 'Judicial & Legal Notice';
+      projectCode = 'LEGAL-PROC';
+      plainLanguageExplanation =
+        `This uploaded document is a ${notificationSection}.\n\n` +
+        `Summary & Key Directives:\n` +
+        `1. Classification: Formal order, notice, or summons issued in judicial or quasi-judicial proceedings.\n` +
+        `2. Key Content: Sets forth court directions, appearance requirements, or statutory compliance instructions.\n` +
+        `3. Important Timeline: Note any mandatory compliance or appearance dates specified in the notice.`;
+      actionRequired = 'Review scheduled hearing dates and statutory compliance timelines promptly.';
+    } else if (isFinancial) {
+      documentType = 'FINANCIAL_DOCUMENT';
+      notificationSection = 'Financial Statement / Invoice / Receipt';
+      project = 'Financial & Commercial Records';
+      projectCode = 'FIN-RECORD';
+      plainLanguageExplanation =
+        `This uploaded document is a ${notificationSection}.\n\n` +
+        `Summary & Key Takeaways:\n` +
+        `1. Classification: Financial record detailing accounts, transactions, taxation, or payments.\n` +
+        `2. Verification: Check billing amounts, tax identifiers (GST/PAN), and payment receipts.\n` +
+        `3. Advisory: Preserve this document for accounting, taxation, and audit reconciliation.`;
+      actionRequired = 'Reconcile payment amounts and preserve the record for audit verification.';
+    } else {
+      documentType = 'GENERAL_DOCUMENT';
+      notificationSection = 'General Official Document';
+      project = 'Official Documentation';
+      projectCode = 'DOC-RECORD';
+      plainLanguageExplanation =
+        `This uploaded document is a ${notificationSection}.\n\n` +
+        `Summary & Plain Language Overview:\n` +
+        `1. Document: ${originalName || 'Uploaded Document'}\n` +
+        `2. Overview: The text has been extracted and analyzed for your review.\n` +
+        `3. Advisory: Review key terms, directives, and any specified dates or citizen obligations.`;
+      actionRequired = 'Review document contents, directives, and applicable deadlines.';
+    }
   }
 
-  const caseReference = `ACQ-2026-MP-${surveyNumber.replace(/[^0-9]/g, '') || '0101'}`;
+  const caseReference = `DOC-2026-${surveyNumber.replace(/[^0-9]/g, '') || '0101'}`;
   const noticeDate = new Date().toISOString().split('T')[0];
-
-  // 7. Initial Plain Language Summary
-  const plainLanguageExplanation =
-    `This official document is a ${notificationSection} issued for the ${project}.\n\n` +
-    `Key Parameters & Takeaways:\n` +
-    `1. Project: ${project} (${projectCode})\n` +
-    `2. Survey / Khasra Parcel: #${surveyNumber} in Village ${village}, Tehsil ${tehsil}, District ${district}\n` +
-    `3. Notified Area: ${areaHa} Hectares (${(areaHa * 2.471).toFixed(2)} Acres)\n` +
-    `4. Citizen Rights: Under RFCTLARR Act 2013, you have the right to inspect survey records, verify notified boundaries, and submit Section 15 objections within 60 days.\n` +
-    `5. Compensation Protection: Statutory compensation is calculated with a rural multiplier (1.0x-2.0x), 100% Solatium, and 12% annual interest from notice to award.`;
-
-  const actionRequired =
-    `Verify notified survey #${surveyNumber} boundaries (${areaHa} ha) against revenue records and submit Section 15 objection if discrepancy exists.`;
 
   return {
     surveyNumber,
