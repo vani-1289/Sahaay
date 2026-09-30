@@ -1,8 +1,6 @@
 import { fetchWithAuth } from './apiClient.js';
 
 export const authApi = {
-  health: () => fetchWithAuth('/health'),
-
   login: (credentials: { email: string; password: string }) =>
     fetchWithAuth('/auth/login', {
       method: 'POST',
@@ -16,6 +14,8 @@ export const authApi = {
     }),
 
   getMe: () => fetchWithAuth('/auth/me'),
+
+  pingHealth: () => fetchWithAuth('/health'),
 
   verifyPan: (panNumber: string) =>
     fetchWithAuth('/auth/verify-pan', {

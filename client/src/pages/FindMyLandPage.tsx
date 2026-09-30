@@ -324,7 +324,7 @@ export const FindMyLandPage: React.FC = () => {
           <div className="grid grid-cols-1 gap-5">
             {results.map((parcel) => {
               const matchedCase = parcel.cases?.[0];
-              const ownerName = matchedCase?.citizen?.name || (isCitizen ? user?.name : '—');
+              const ownerName = parcel.owner?.name || matchedCase?.citizen?.name || (isCitizen ? user?.name : '—');
               const displayAreaAcres =
                 parcel.recordedAreaAcres ||
                 (parcel.recordedAreaHa ? (parcel.recordedAreaHa * 2.47105).toFixed(2) : '—');

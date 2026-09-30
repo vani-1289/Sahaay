@@ -60,7 +60,7 @@ export const App: React.FC = () => {
 
   // Proactively ping backend to wake up cloud server on initial page visit
   useEffect(() => {
-    api.health().catch(() => {});
+    api.pingHealth().catch(() => {});
   }, []);
 
   // Sync RTL and lang attribute with html root

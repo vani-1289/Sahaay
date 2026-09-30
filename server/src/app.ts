@@ -52,7 +52,24 @@ const allowedOrigins = config.CORS_ORIGIN === '*'
 
 app.use(
   cors({
-    origin: allowedOrigins === '*' ? true : allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow non-browser requests (mobile, server-to-server, curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins === '*' || (Array.isArray(allowedOrigins) && allowedOrigins.includes('*'))) {
+        return callback(null, true);
+      }
+      if (Array.isArray(allowedOrigins) && allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      // Allow any Vercel domain (production and preview builds)
+      if (origin.endsWith('.vercel.app') || origin.includes('vercel.app')) {
+        return callback(null, true);
+      }
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

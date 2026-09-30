@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore.js';
 import { api } from '../services/api.js';
-import { ArrowRight, UserCheck, Phone, MapPin } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { t } from '../lib/i18n.js';
 import { RegistrationStepper } from '../components/auth/RegistrationStepper.js';
 import { PanVerificationStep } from '../components/auth/PanVerificationStep.js';
@@ -23,16 +23,21 @@ export const LoginPage: React.FC = () => {
     }
   }, [searchParams]);
 
+  // Proactively wake up backend server on mount (mitigating cold starts on free tier)
+  useEffect(() => {
+    api.pingHealth().catch(() => {});
+  }, []);
+
   // Login / Step 1 State
-  const [email, setEmail] = useState('citizen@sahaay.demo');
-  const [password, setPassword] = useState('password123');
+  const [loginRole, setLoginRole] = useState<'LAND_OWNER' | 'OFFICER'>('LAND_OWNER');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [village, setVillage] = useState('Rampur');
-  const [district, setDistrict] = useState('Bhopal');
+  const [village, setVillage] = useState('');
+  const [district, setDistrict] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [wakeUpNotice, setWakeUpNotice] = useState(false);
 
   // Multi-step Registration State (Steps 1 to 6)
   const [regStep, setRegStep] = useState<number>(1);
@@ -44,23 +49,13 @@ export const LoginPage: React.FC = () => {
   const { setAuth, language } = useAuthStore();
   const navigate = useNavigate();
 
-  // Proactively ping health check on mount to wake up Render server
-  useEffect(() => {
-    api.health().catch(() => {});
-  }, []);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    setWakeUpNotice(false);
-
-    const wakeUpTimer = setTimeout(() => {
-      setWakeUpNotice(true);
-    }, 2500);
 
     try {
-      const res = await api.login({ email: email.trim(), password });
+      const res = await api.login({ email, password });
       if (res.success) {
         setAuth(res.data.token, res.data.user);
         if (res.data.user.role === 'OFFICER') {
@@ -72,8 +67,6 @@ export const LoginPage: React.FC = () => {
     } catch (err: any) {
       setError(err.message || t('authFailedError', language));
     } finally {
-      clearTimeout(wakeUpTimer);
-      setWakeUpNotice(false);
       setLoading(false);
     }
   };
@@ -117,30 +110,6 @@ export const LoginPage: React.FC = () => {
       setError(err.message || t('authFailedError', language));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const populateDemoUser = (userKey: 'GEETA' | 'RAJESH' | 'ANITA' | 'OFFICER' | 'ADMIN' | 'PRAJYA') => {
-    setIsRegister(false);
-    setRegStep(1);
-    if (userKey === 'GEETA') {
-      setEmail('geeta.singh@sahaay.demo');
-      setPassword('password123');
-    } else if (userKey === 'RAJESH') {
-      setEmail('citizen@sahaay.demo');
-      setPassword('password123');
-    } else if (userKey === 'ANITA') {
-      setEmail('anita.chouhan@sahaay.demo');
-      setPassword('password123');
-    } else if (userKey === 'OFFICER') {
-      setEmail('officer@sahaay.demo');
-      setPassword('password123');
-    } else if (userKey === 'PRAJYA') {
-      setEmail('prajya@gmail.com');
-      setPassword('12345678');
-    } else {
-      setEmail('admin@sahaay.demo');
-      setPassword('password123');
     }
   };
 
@@ -195,88 +164,6 @@ export const LoginPage: React.FC = () => {
             </p>
           </div>
 
-          {/* 1-Click Evaluation Credentials for Hackathon Evaluators */}
-          <div className="bg-[#F5FAFC] border border-[#DDE6EC] p-3 sm:p-3.5 rounded-xl space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#123B5D] flex items-center gap-1.5">
-                <UserCheck className="w-4 h-4 text-[#123B5D]" />
-                <span>1-Click Evaluator Accounts (Different Land Owners vs Officer)</span>
-              </span>
-              <span className="text-[10px] bg-[#E8B84A] text-[#123B5D] font-extrabold px-2 py-0.5 rounded">
-                {t('demoBadge', language)}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => populateDemoUser('GEETA')}
-                className={`p-2 rounded-lg border text-left transition cursor-pointer min-h-[44px] ${
-                  email === 'geeta.singh@sahaay.demo' && !isRegister
-                    ? 'bg-[#123B5D] text-white border-[#123B5D] shadow-soft'
-                    : 'bg-white border-[#DDE6EC] text-[#243746] hover:bg-slate-50'
-                }`}
-              >
-                <div className="text-xs font-bold">👩‍🌾 Geeta Singh</div>
-                <div className="text-[10px] opacity-80 truncate">Chandanpura #558/3 (13.37 acres)</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => populateDemoUser('RAJESH')}
-                className={`p-2 rounded-lg border text-left transition cursor-pointer min-h-[44px] ${
-                  email === 'citizen@sahaay.demo' && !isRegister
-                    ? 'bg-[#123B5D] text-white border-[#123B5D] shadow-soft'
-                    : 'bg-white border-[#DDE6EC] text-[#243746] hover:bg-slate-50'
-                }`}
-              >
-                <div className="text-xs font-bold">👨‍🌾 Rajesh Sharma</div>
-                <div className="text-[10px] opacity-80 truncate">Rampur #1042 (6.00 acres)</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => populateDemoUser('ANITA')}
-                className={`p-2 rounded-lg border text-left transition cursor-pointer min-h-[44px] ${
-                  email === 'anita.chouhan@sahaay.demo' && !isRegister
-                    ? 'bg-[#123B5D] text-white border-[#123B5D] shadow-soft'
-                    : 'bg-white border-[#DDE6EC] text-[#243746] hover:bg-slate-50'
-                }`}
-              >
-                <div className="text-xs font-bold">👩‍🌾 Anita Chouhan</div>
-                <div className="text-[10px] opacity-80 truncate">Kolar Kalan #88/1 (7.90 acres)</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => populateDemoUser('OFFICER')}
-                className={`p-2 rounded-lg border text-left transition cursor-pointer min-h-[44px] ${
-                  email === 'officer@sahaay.demo' && !isRegister
-                    ? 'bg-[#0284C7] text-white border-[#0284C7] shadow-soft'
-                    : 'bg-white border-[#DDE6EC] text-[#243746] hover:bg-slate-50'
-                }`}
-              >
-                <div className="text-xs font-bold text-[#0284C7] group-hover:text-white">👮‍♂️ Vikram Chouhan (CALAO)</div>
-                <div className="text-[10px] opacity-80 truncate">Officer Mode (All 13 Bhopal Parcels)</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => populateDemoUser('PRAJYA')}
-                className={`p-2 rounded-lg border text-left transition cursor-pointer min-h-[44px] sm:col-span-2 ${
-                  email === 'prajya@gmail.com' && !isRegister
-                    ? 'bg-[#123B5D] text-white border-[#123B5D] shadow-soft'
-                    : 'bg-white border-[#DDE6EC] text-[#243746] hover:bg-slate-50'
-                }`}
-              >
-                <div className="text-xs font-bold flex items-center justify-between">
-                  <span>👩‍💼 Kumari Prajya</span>
-                  <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded">Registered Account</span>
-                </div>
-                <div className="text-[10px] opacity-80 truncate">prajya@gmail.com (Passcode: 12345678 / password123)</div>
-              </button>
-            </div>
-          </div>
-
           {/* Form Tabs */}
           <div className="bg-white rounded-xl border border-[#DDE6EC] overflow-hidden">
             <div className="flex border-b border-[#DDE6EC] bg-[#F8FAFC]">
@@ -309,80 +196,157 @@ export const LoginPage: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-4">
-              {wakeUpNotice && (
-                <div className="bg-amber-50 border border-amber-300 text-amber-900 rounded-lg p-3 text-xs flex items-start gap-2.5 animate-pulse">
-                  <span className="text-base leading-none">⏳</span>
-                  <div className="space-y-0.5">
-                    <p className="font-bold">Connecting to Cloud Backend Server...</p>
-                    <p className="text-[11px] text-amber-800 opacity-90">
-                      The server is waking up (Render free tier takes ~30-40 seconds on cold start). Please keep this tab open, your login request is being processed.
-                    </p>
-                  </div>
-                </div>
-              )}
-
               {error && (
-                <div className="bg-[#FBECEC] border border-[#C62828]/30 rounded-lg p-3 text-xs text-[#C62828] font-medium space-y-1">
-                  <div className="font-bold flex items-center gap-1.5">
-                    <span>⚠️</span>
-                    <span>Sign-in Notice</span>
-                  </div>
-                  <p>{error}</p>
+                <div className="bg-[#FBECEC] border border-[#C62828]/30 rounded-lg p-3 text-xs text-[#C62828] font-medium">
+                  {error}
                 </div>
               )}
 
               {/* SIGN-IN TAB */}
               {!isRegister ? (
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#123B5D] mb-1">
-                      {t('emailLabel', language)}
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder={t('emailPlaceholder', language)}
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-[#DDE6EC] text-xs sm:text-sm font-medium bg-[#F8FAFC] text-[#243746] focus:outline-none focus:border-[#123B5D]"
-                    />
+                <div className="space-y-4">
+                  {/* Land Owner vs Land Officer Role Selector Tabs */}
+                  <div className="grid grid-cols-2 gap-2 p-1 bg-[#F1F5F9] rounded-xl border border-[#DDE6EC]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginRole('LAND_OWNER');
+                        setError('');
+                      }}
+                      className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer ${
+                        loginRole === 'LAND_OWNER'
+                          ? 'bg-[#123B5D] text-white shadow-soft'
+                          : 'text-[#667784] hover:text-[#123B5D] hover:bg-white/60'
+                      }`}
+                    >
+                      <span className="text-sm">🏡</span>
+                      <span>Land Owner Login</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginRole('OFFICER');
+                        setError('');
+                      }}
+                      className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer ${
+                        loginRole === 'OFFICER'
+                          ? 'bg-[#0284C7] text-white shadow-soft'
+                          : 'text-[#667784] hover:text-[#0284C7] hover:bg-white/60'
+                      }`}
+                    >
+                      <span className="text-sm">🏛️</span>
+                      <span>Land Officer Login</span>
+                    </button>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-[#123B5D] mb-1">
-                      {t('passwordLabel', language)}
-                    </label>
-                    <input
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder={t('passwordPlaceholder', language)}
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-[#DDE6EC] text-xs sm:text-sm font-medium bg-[#F8FAFC] text-[#243746] focus:outline-none focus:border-[#123B5D]"
-                    />
-                  </div>
+                  {/* Role Context Information Banner */}
+                  {loginRole === 'LAND_OWNER' ? (
+                    <div className="p-3 bg-[#F5FAFC] border border-[#DDE6EC] rounded-xl text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[#123B5D] flex items-center gap-1.5">
+                          <span>🏡</span>
+                          <span>भूमि स्वामी / Citizen Portal</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEmail('citizen@sahaay.demo');
+                            setPassword('password123');
+                          }}
+                          className="text-[10px] font-bold text-[#123B5D] bg-[#E8B84A] px-2 py-0.5 rounded hover:bg-[#D4A538] transition cursor-pointer"
+                        >
+                          Quick Fill Citizen Demo
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-[#667784]">
+                        Access your notified land parcel, 100% Solatium calculation, DBT status & digital locker.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-[#F0F9FF] border border-[#BAE6FD] rounded-xl text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[#0284C7] flex items-center gap-1.5">
+                          <span>🏛️</span>
+                          <span>Competent Land Acquisition Officer (CALAO)</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEmail('officer@sahaay.demo');
+                            setPassword('password123');
+                          }}
+                          className="text-[10px] font-bold text-white bg-[#0284C7] px-2 py-0.5 rounded hover:bg-[#0369A1] transition cursor-pointer"
+                        >
+                          Quick Fill Officer Demo
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-[#0369A1]">
+                        Administrative revenue access to review all 13 Bhopal parcels, verify claims, resolve Section 15 grievances & advance stages.
+                      </p>
+                    </div>
+                  )}
 
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full min-h-[46px] bg-[#123B5D] hover:bg-[#1B4D78] active:bg-[#0C2840] text-white font-semibold text-xs sm:text-sm rounded-lg shadow-soft transition flex items-center justify-center space-x-2 disabled:opacity-70 mt-2 cursor-pointer"
-                  >
-                    {loading ? (
-                      <span className="flex items-center gap-2">
-                        <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        <span>{wakeUpNotice ? 'Waking up server & verifying...' : t('verifyingBtn', language)}</span>
-                      </span>
-                    ) : (
-                      <>
-                        <span>{t('signInBtn', language)}</span>
-                        <ArrowRight className="w-4 h-4 text-[#E8B84A]" />
-                      </>
-                    )}
-                  </button>
-                </form>
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#123B5D] mb-1">
+                        {loginRole === 'LAND_OWNER'
+                          ? 'Registered Land Owner Email / Mobile ID'
+                          : 'Officer Official Email / Gov ID'}
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder={
+                          loginRole === 'LAND_OWNER'
+                            ? 'name@sahaay.demo or your email'
+                            : 'officer@sahaay.demo'
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#DDE6EC] text-xs sm:text-sm font-medium bg-[#F8FAFC] text-[#243746] focus:outline-none focus:border-[#123B5D]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#123B5D] mb-1">
+                        {loginRole === 'LAND_OWNER'
+                          ? 'Passcode / Password'
+                          : 'Officer Passcode / Password'}
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#DDE6EC] text-xs sm:text-sm font-medium bg-[#F8FAFC] text-[#243746] focus:outline-none focus:border-[#123B5D]"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className={`w-full min-h-[46px] text-white font-semibold text-xs sm:text-sm rounded-lg shadow-soft transition flex items-center justify-center space-x-2 disabled:opacity-70 mt-2 cursor-pointer ${
+                        loginRole === 'OFFICER'
+                          ? 'bg-[#0284C7] hover:bg-[#0369A1] active:bg-[#075985]'
+                          : 'bg-[#123B5D] hover:bg-[#1B4D78] active:bg-[#0C2840]'
+                      }`}
+                    >
+                      {loading ? (
+                        <span>{t('verifyingBtn', language)}</span>
+                      ) : (
+                        <>
+                          <span>
+                            {loginRole === 'LAND_OWNER'
+                              ? 'Sign In as Land Owner'
+                              : 'Sign In as Land Officer (CALAO)'}
+                          </span>
+                          <ArrowRight className="w-4 h-4 text-[#E8B84A]" />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
               ) : (
                 /* REGISTRATION TAB: 6-STEP FLOW */
                 <div>

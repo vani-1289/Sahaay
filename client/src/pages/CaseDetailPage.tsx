@@ -106,6 +106,42 @@ export const CaseDetailPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Land Owner / Citizen Dossier Details */}
+        {caseData.citizen && (
+          <div className="px-4 sm:px-6 py-3 bg-[#F0F9FF] border-b border-[#BAE6FD] flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-8 h-8 rounded-lg bg-[#0284C7] text-white flex items-center justify-center font-bold text-sm shadow-soft">
+                👤
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-extrabold text-[#0369A1]">
+                    भूमि स्वामी (Land Owner): {caseData.citizen.name}
+                  </span>
+                  {caseData.citizen.profile?.panStatus === 'VERIFIED' && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#E8F4EC] text-[#2E7D5B] border border-[#2E7D5B]/30">
+                      ✓ KYC Verified
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-[#0284C7] mt-0.5 flex flex-wrap gap-x-3">
+                  <span>Mobile: <strong className="text-[#0C4A6E]">{caseData.citizen.phone || '—'}</strong></span>
+                  <span>Email: <strong className="text-[#0C4A6E]">{caseData.citizen.email || '—'}</strong></span>
+                  {caseData.citizen.profile?.panNumber && (
+                    <span>PAN: <strong className="text-[#0C4A6E] font-mono">{caseData.citizen.profile.panNumber}</strong></span>
+                  )}
+                  {caseData.citizen.profile?.aadhaarMasked && (
+                    <span>Aadhaar: <strong className="text-[#0C4A6E] font-mono">{caseData.citizen.profile.aadhaarMasked}</strong></span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <span className="text-[10px] font-mono font-bold bg-white text-[#0369A1] px-2.5 py-1 rounded border border-[#BAE6FD] shadow-soft">
+              Citizen ID: {caseData.citizen.id}
+            </span>
+          </div>
+        )}
+
         <div className="p-3.5 sm:p-4 bg-white flex flex-wrap gap-2.5 text-xs">
           <button
             onClick={() => navigate('/map')}

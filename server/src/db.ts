@@ -1221,7 +1221,29 @@ const mockDb: any = {
       if (args?.where?.status) {
         list = list.filter((c) => c.status === args.where.status);
       }
-      return list.map((c) => populateCase(c, args?.include));
+      if (args?.where?.stage) {
+        list = list.filter((c) => c.stage === args.where.stage);
+      }
+      if (args?.where?.OR && Array.isArray(args.where.OR)) {
+        list = list.filter((c) => {
+          const parcel = inMemoryStore.parcels.find((p) => p.id === c.parcelId);
+          const citizen = inMemoryStore.users.find((u) => u.id === c.citizenId);
+          const project = inMemoryStore.projects.find((pr) => pr.id === c.projectId);
+          return args.where.OR.some((cond: any) => {
+            if (cond.caseReference?.contains && c.caseReference?.toLowerCase().includes(cond.caseReference.contains.toLowerCase())) return true;
+            if (cond.parcel?.surveyNumber?.contains && parcel?.surveyNumber?.toLowerCase().includes(cond.parcel.surveyNumber.contains.toLowerCase())) return true;
+            if (cond.parcel?.village?.contains && parcel?.village?.toLowerCase().includes(cond.parcel.village.contains.toLowerCase())) return true;
+            if (cond.citizen?.name?.contains && citizen?.name?.toLowerCase().includes(cond.citizen.name.contains.toLowerCase())) return true;
+            if (cond.project?.name?.contains && project?.name?.toLowerCase().includes(cond.project.name.contains.toLowerCase())) return true;
+            return false;
+          });
+        });
+      }
+      let result = list.map((c) => populateCase(c, args?.include));
+      if (args?.take && typeof args.take === 'number') {
+        result = result.slice(0, args.take);
+      }
+      return result;
     },
     findUnique: async (args: any) => {
       const id = args?.where?.id;
@@ -1453,9 +1475,20 @@ const mockDb: any = {
   grievance: {
     findMany: async (args: any) => {
       const userId = args?.where?.citizenId;
-      return inMemoryStore.grievances
-        .filter((g) => !userId || g.citizenId === userId)
-        .map((g) => populateGrievance(g));
+      let list = inMemoryStore.grievances;
+      if (userId) list = list.filter((g) => g.citizenId === userId);
+      if (args?.where?.status) {
+        if (args.where.status.in && Array.isArray(args.where.status.in)) {
+          list = list.filter((g) => args.where.status.in.includes(g.status));
+        } else if (typeof args.where.status === 'string') {
+          list = list.filter((g) => g.status === args.where.status);
+        }
+      }
+      let result = list.map((g) => populateGrievance(g));
+      if (args?.take && typeof args.take === 'number') {
+        result = result.slice(0, args.take);
+      }
+      return result;
     },
     findFirst: async (args?: any) => {
       const id = args?.where?.id;
