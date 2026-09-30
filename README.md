@@ -151,10 +151,13 @@ npm run ci:check
 
 ## ☁️ Production Deployment Architecture
 
+For detailed step-by-step instructions, see our comprehensive [Deployment & Environment Configuration Guide](./docs/DEPLOYMENT.md).
+
 | Component | Recommended Free-Tier Provider | Setup Details |
 |---|---|---|
-| **Frontend Client** | **Vercel** | Set root directory to `client/`. Pre-configured `vercel.json` provides seamless SPA routing. Set `VITE_API_BASE_URL` to your backend URL. |
-| **Backend API** | **Render** / **Railway** | Build using `server/Dockerfile` or native Node 22 runtime. Set `CORS_ORIGIN` to your Vercel URL. |
+| **Frontend Client** | **Vercel** | Set root directory to `client/`. Pre-configured `vercel.json` provides seamless SPA routing. Configure `VITE_API_BASE_URL` in Vercel Environment Variables. |
+| **Backend API** | **Render** / **Railway** | Build using `server/Dockerfile` or native Node 22 runtime. Configure `NVIDIA_API_KEY` (`const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;`), `AI_PROVIDER=nvidia`, and `CORS_ORIGIN`. |
+| **AI Engine** | **NVIDIA NIM** | Model: `meta/llama-3.2-90b-vision-instruct`. Authenticated securely via `NVIDIA_API_KEY` environment variable only. |
 | **Database** | **Neon** / **Supabase** | Serverless Managed PostgreSQL. Set `DATABASE_URL` and run `npm run db:migrate:deploy` on startup. |
 | **Storage** | **Cloudflare R2** / **AWS S3** | S3-compatible zero-egress object storage. Set `STORAGE_PROVIDER=s3` with your access keys. |
 

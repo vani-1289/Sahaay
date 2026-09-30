@@ -10,15 +10,16 @@ let faceVerificationInstance: IFaceVerificationService | null = null;
 
 export function getAIService(): IAIService {
   if (!aiInstance) {
+    const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
     const provider = process.env.AI_PROVIDER?.toLowerCase() || '';
-    if (process.env.NVIDIA_API_KEY || provider === 'nvidia') {
-      aiInstance = new OpenAIService(process.env.NVIDIA_API_KEY);
+    if (NVIDIA_API_KEY || provider === 'nvidia') {
+      aiInstance = new OpenAIService(NVIDIA_API_KEY);
     } else if (provider === 'openai' && process.env.OPENAI_API_KEY) {
       aiInstance = new OpenAIService(process.env.OPENAI_API_KEY);
     } else if (provider === 'ocr') {
       aiInstance = new OcrAIService();
     } else {
-      aiInstance = new OpenAIService();
+      aiInstance = new OpenAIService(NVIDIA_API_KEY);
     }
   }
   return aiInstance;

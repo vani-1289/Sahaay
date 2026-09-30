@@ -15,6 +15,8 @@ const KNOWN_INSECURE_SECRETS = [
   'changeme',
 ];
 
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(5000),
@@ -22,7 +24,8 @@ const envSchema = z.object({
   JWT_SECRET: z.string().default('sahaay_default_dev_jwt_secret_2026'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   CORS_ORIGIN: z.string().default('*'),
-  AI_PROVIDER: z.enum(['mock', 'openai', 'ocr']).default('mock'),
+  AI_PROVIDER: z.enum(['mock', 'openai', 'ocr', 'nvidia']).default('nvidia'),
+  NVIDIA_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
   STORAGE_PROVIDER: z.enum(['local', 's3']).default('local'),
   STORAGE_PATH: z.string().default(path.resolve(process.cwd(), '../storage')),

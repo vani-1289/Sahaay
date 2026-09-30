@@ -48,13 +48,16 @@ const LANGUAGE_MAP: Record<string, { name: string; script: string }> = {
   or: { name: 'Odia', script: 'Odia' },
 };
 
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+
 export class OpenAIService implements IAIService {
   private apiKey: string;
   private mockFallback: MockAIService;
 
   constructor(apiKey?: string) {
-    // Check NVIDIA_API_KEY first, fallback to OPENAI_API_KEY for seamless compatibility
-    this.apiKey = apiKey || process.env.NVIDIA_API_KEY || process.env.OPENAI_API_KEY || '';
+    const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+    // Read NVIDIA_API_KEY strictly from environment variables
+    this.apiKey = apiKey || NVIDIA_API_KEY || process.env.OPENAI_API_KEY || '';
     this.mockFallback = new MockAIService();
   }
 
