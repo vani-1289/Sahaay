@@ -1099,9 +1099,19 @@ const mockDb: any = {
     findUnique: async (args: any) => {
       const email = args?.where?.email?.toLowerCase();
       const id = args?.where?.id;
-      const u = inMemoryStore.users.find(
-        (x) => (email && x.email.toLowerCase() === email) || (id && x.id === id)
-      );
+      const u = inMemoryStore.users.find((x) => {
+        if (id && x.id === id) return true;
+        if (email && x.email.toLowerCase() === email) return true;
+        if (args?.where?.OR && Array.isArray(args.where.OR)) {
+          return args.where.OR.some((cond: any) => {
+            if (cond.id && x.id === cond.id) return true;
+            if (cond.email && x.email.toLowerCase() === cond.email.toLowerCase()) return true;
+            if (cond.phone && (x.phone === cond.phone || x.phone?.replace(/[\s\-\+]/g, '') === cond.phone?.replace(/[\s\-\+]/g, ''))) return true;
+            return false;
+          });
+        }
+        return false;
+      });
       if (!u) return null;
       const copy = { ...u };
       if (args?.include?.profile) {
@@ -1112,9 +1122,19 @@ const mockDb: any = {
     findFirst: async (args: any) => {
       const email = args?.where?.email?.toLowerCase();
       const id = args?.where?.id;
-      const u = inMemoryStore.users.find(
-        (x) => (email && x.email.toLowerCase() === email) || (id && x.id === id)
-      );
+      const u = inMemoryStore.users.find((x) => {
+        if (id && x.id === id) return true;
+        if (email && x.email.toLowerCase() === email) return true;
+        if (args?.where?.OR && Array.isArray(args.where.OR)) {
+          return args.where.OR.some((cond: any) => {
+            if (cond.id && x.id === cond.id) return true;
+            if (cond.email && x.email.toLowerCase() === cond.email.toLowerCase()) return true;
+            if (cond.phone && (x.phone === cond.phone || x.phone?.replace(/[\s\-\+]/g, '') === cond.phone?.replace(/[\s\-\+]/g, ''))) return true;
+            return false;
+          });
+        }
+        return false;
+      });
       if (!u) return null;
       const copy = { ...u };
       if (args?.include?.profile) {
