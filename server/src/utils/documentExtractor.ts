@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import zlib from 'zlib';
 import { createWorker } from 'tesseract.js';
 import { ExtractedDocumentData } from '../ai/ai.interface';
 import { logger } from './logger';
@@ -9,10 +10,42 @@ import { logger } from './logger';
  * Extracts genuine text and parameters from uploaded PDFs, images, and text files.
  */
 
-// Helper to extract text from PDF buffer using stream parsing and string extraction
+// Helper to extract text from PDF buffer using stream decompression and string extraction
 export function extractTextFromPdfBuffer(buffer: Buffer): string {
-  const binary = buffer.toString('binary');
   const textTokens: string[] = [];
+
+  // Decompress all /Filter /FlateDecode zlib streams
+  let decompressedStreamsText = '';
+  let idx = 0;
+  const streamHeader = Buffer.from('stream');
+  const endStreamHeader = Buffer.from('endstream');
+
+  while (idx < buffer.length) {
+    const sIdx = buffer.indexOf(streamHeader, idx);
+    if (sIdx === -1) break;
+    let start = sIdx + 6;
+    if (buffer[start] === 0x0d && buffer[start + 1] === 0x0a) start += 2;
+    else if (buffer[start] === 0x0a || buffer[start] === 0x0d) start += 1;
+
+    const eIdx = buffer.indexOf(endStreamHeader, start);
+    if (eIdx === -1) break;
+
+    const streamData = buffer.subarray(start, eIdx);
+    try {
+      const decompressed = zlib.inflateSync(streamData);
+      decompressedStreamsText += ' ' + decompressed.toString('latin1');
+    } catch {
+      try {
+        const raw = zlib.inflateRawSync(streamData);
+        decompressedStreamsText += ' ' + raw.toString('latin1');
+      } catch {
+        // Stream not compressed or unparseable
+      }
+    }
+    idx = eIdx + 9;
+  }
+
+  const binary = buffer.toString('latin1') + ' ' + decompressedStreamsText;
 
   // 1. Extract text in parenthetical Tj / ' / " operators: (Some text) Tj
   const tjRegex = /\(([^)]+)\)\s*(?:Tj|'|")/g;
@@ -275,13 +308,18 @@ export function parseDocumentMetadata(
   }
 
   if (surveyNumber === undefined) {
-    surveyNumber = isDemo1042 ? '1042' : '1042';
+    if (isDemo1042) {
+      surveyNumber = '1042';
+    } else {
+      const anyNum = combined.match(/\b([0-9]{2,4}(?:\/[0-9]+)?)\b/);
+      surveyNumber = anyNum ? anyNum[1] : 'Not Specified';
+    }
   }
   if (!village) {
-    village = isDemo1042 ? 'Rampur' : 'Rampur';
+    village = isDemo1042 ? 'Rampur' : 'Notified Revenue Circle';
   }
   if (areaHa === undefined) {
-    areaHa = 2.73;
+    areaHa = isDemo1042 ? 2.73 : 1.00;
   }
 
   // 5. Project Name

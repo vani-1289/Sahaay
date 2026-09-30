@@ -58,7 +58,10 @@ export const DocumentIntelligencePage: React.FC = () => {
     },
   ];
 
-  const handleFileUpload = async (selectedFile: File) => {
+  const handleFileUpload = async (selectedFile: File, isSample = false) => {
+    if (!isSample) {
+      setActiveSample(null);
+    }
     setError('');
     setAnalyzing(true);
     setAnalysisResult(null);
@@ -72,9 +75,8 @@ export const DocumentIntelligencePage: React.FC = () => {
       const res = await api.uploadDocument(formData);
       if (res.success) {
         setAnalysisResult(res.data);
-        if (selectedLanguage !== 'en') {
-          handleLanguageStream(selectedLanguage, res.data.extractedData);
-        }
+        // Automatically start live AI explanation in the selected language
+        handleLanguageStream(selectedLanguage, res.data.extractedData);
       }
     } catch (err: any) {
       setError(err.message || t('status_REJECTED', language));
@@ -86,7 +88,7 @@ export const DocumentIntelligencePage: React.FC = () => {
   const handleSampleSelect = (sample: typeof demoSamples[0]) => {
     setActiveSample(sample.id);
     const mockFile = new File(['%PDF-1.4 sample'], sample.filename, { type: 'application/pdf' });
-    handleFileUpload(mockFile);
+    handleFileUpload(mockFile, true);
   };
 
   const handleLanguageStream = async (newLang: string, overrideExtracted?: any) => {
@@ -329,7 +331,7 @@ export const DocumentIntelligencePage: React.FC = () => {
                 </h3>
                 <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono font-bold bg-[#EAF3F8] text-[#0284C7] px-2 py-0.5 rounded border border-[#BAE6FD]">
                   <Cpu className="w-3 h-3 text-[#0284C7]" />
-                  <span>NVIDIA NIM • meta/llama-3.2-90b-vision-instruct</span>
+                  <span>NVIDIA NIM • meta/llama-3.2-vision-instruct</span>
                 </span>
               </div>
 

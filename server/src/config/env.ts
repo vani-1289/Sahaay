@@ -3,8 +3,22 @@ import { z } from 'zod';
 import path from 'path';
 import crypto from 'crypto';
 
-// Load .env file
-dotenv.config();
+import fs from 'fs';
+
+// Resilient multi-path .env loader
+const candidateEnvPaths = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), 'server/.env'),
+  path.resolve(process.cwd(), '../.env'),
+  path.resolve(__dirname, '../../.env'),
+  path.resolve(__dirname, '../../../.env'),
+];
+
+for (const envPath of candidateEnvPaths) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+  }
+}
 
 const KNOWN_INSECURE_SECRETS = [
   'sahaay_default_dev_jwt_secret_2026',
@@ -15,8 +29,6 @@ const KNOWN_INSECURE_SECRETS = [
   'changeme',
 ];
 
-const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
-
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(5000),
@@ -26,6 +38,7 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('*'),
   AI_PROVIDER: z.enum(['mock', 'openai', 'ocr', 'nvidia']).default('nvidia'),
   NVIDIA_API_KEY: z.string().optional(),
+  NVIDIA_NIM_MODEL: z.string().default('meta/llama-3.2-11b-vision-instruct'),
   OPENAI_API_KEY: z.string().optional(),
   STORAGE_PROVIDER: z.enum(['local', 's3']).default('local'),
   STORAGE_PATH: z.string().default(path.resolve(process.cwd(), '../storage')),
