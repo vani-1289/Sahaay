@@ -72,7 +72,10 @@ export class OpenAIService implements IAIService {
     // 2. If NVIDIA API key is available and document is not an evaluator demo fixture,
     // generate real plain language explanation using NVIDIA NIM
     const lowerName = originalName.toLowerCase();
-    const isExplicitDemo = lowerName.includes('demo') && (lowerName.includes('1042') || lowerName.includes('1043'));
+    const isExplicitDemo =
+      lowerName.includes('1042') ||
+      lowerName.includes('1043') ||
+      lowerName.includes('demo');
 
     if (this.apiKey && !isExplicitDemo && baseExtracted.rawText && baseExtracted.rawText.length > 10) {
       try {

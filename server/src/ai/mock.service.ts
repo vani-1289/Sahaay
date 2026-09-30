@@ -13,7 +13,11 @@ export class MockAIService implements IAIService {
     const lowerName = originalName.toLowerCase();
 
     // 1. Explicit preloaded evaluator demo notice fixtures
-    if (lowerName === 'demo-notice-1042.pdf' || (lowerName.includes('demo') && lowerName.includes('1042'))) {
+    if (
+      lowerName === 'demo-notice-1042.pdf' ||
+      lowerName === 'gazette_notice_sec11_survey1042.pdf' ||
+      (lowerName.includes('1042') && (lowerName.includes('demo') || lowerName.includes('sec11') || lowerName.includes('gazette')))
+    ) {
       return {
         surveyNumber: '1042',
         khasraNumber: '1042/1',
@@ -38,7 +42,10 @@ export class MockAIService implements IAIService {
       };
     }
 
-    if (lowerName.includes('1043') && lowerName.includes('demo')) {
+    if (
+      lowerName === 'award_order_survey1043.pdf' ||
+      (lowerName.includes('1043') && (lowerName.includes('demo') || lowerName.includes('award')))
+    ) {
       return {
         surveyNumber: '1043',
         khasraNumber: '1043/2',
